@@ -40,7 +40,7 @@ get_instances_by_name_tag() {
 }
 
 # Before doing anything, check to make sure the session manager plugin is installed
-if [ ! -d /usr/local/sessionmanagerplugin ]; then
+if [ ! -e /usr/local/bin/session-manager-plugin ]; then
   echo "SessionManagerPlugin is not found. Please refer to SessionManager Documentation here: http://docs.aws.amazon.com/console/systems-manager/session-manager-plugin-not-found"
   exit 1
 fi
