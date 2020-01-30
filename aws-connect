@@ -1,0 +1,144 @@
+#!/bin/bash
+
+# Wrapper around AWS session manager for instance access and SSH tunnels
+programname=$0
+
+# Defaults
+action=ssh
+aws_region=us-east-1
+aws_profile=''
+port=9999
+interactive_mode=0
+
+usage() {
+  echo "Usage:"
+  echo ""
+  echo "$programname -a ssh|tunnel -n <instance name> [-r region] [-p profile name] [-o port] [-i]"
+  echo ""
+  echo "  -a   Connect interactive session or establish ssh tunnel (default: ssh)"
+  echo "  -n   Value for the Name tag of an EC2 instance"
+  echo "  -r   AWS region (default: us-east-1)"
+  echo "  -p   AWS profile (default: none)"
+  echo "  -o   Local ssh tunnel port (only applicable in tunnel mode; default: 9999)"
+  echo "  -h   Display this help"
+  exit 1
+}
+
+get_instances_by_name_tag() {
+  name_tag=$1
+  region=$2
+  profile=$3
+
+  instance_ids_list=$(aws ec2 describe-instances \
+    --filters "Name=tag:Name,Values=${name_tag}" "Name=instance-state-name,Values=running"  \
+    --query 'Reservations[].Instances[].InstanceId' \
+    --output text \
+    --region "${region}" \
+    --profile "${profile}")
+
+  echo "${instance_ids_list}"
+}
+
+# Before doing anything, check to make sure the session manager plugin is installed
+if [ ! -d /usr/local/sessionmanagerplugin ]; then
+  echo "SessionManagerPlugin is not found. Please refer to SessionManager Documentation here: http://docs.aws.amazon.com/console/systems-manager/session-manager-plugin-not-found"
+  exit 1
+fi
+
+# get the options and set flags
+while getopts "a:n:r:p:o:ih" OPTION; do
+  case $OPTION in
+  h)
+    usage
+    exit 1
+    ;;
+  a)
+    action=$OPTARG
+    ;;
+  r)
+    aws_region=$OPTARG
+    ;;
+  p)
+    aws_profile=$OPTARG
+    ;;
+  n)
+    tag_value=$OPTARG
+    ;;
+  o)
+    port=$OPTARG
+    if [ "${port}" -le 1024 ]; then
+      echo "Port must be greater than 1024"
+      exit 1
+    fi
+    ;;
+  i)
+    interactive_mode=1
+    ;;
+  *)
+    echo "Incorrect options provided"
+    exit 1
+    ;;
+  esac
+done
+
+# Check for mandatory args
+if [ -z "${tag_value}" ]; then
+  usage
+  exit 1
+else
+  # Get the list of instances
+  instance_ids=$(get_instances_by_name_tag "${tag_value}" "${aws_region}" "${aws_profile}")
+
+  if [ -z "${instance_ids}" ]; then
+    echo "No instances available named ${tag_value} in region ${aws_region}"
+  else
+    if [ "${interactive_mode}" -eq 1 ]; then
+      echo "Select an instance to connect to"
+
+      inst_num=1
+      for instance in ${instance_ids}
+      do
+        echo "${inst_num}) ${instance}"
+        inst_num=$(( inst_num + 1 ))
+      done
+
+      num_instances=$(( inst_num - 1))
+
+      echo -n "(default is 1): "
+      read -r choice_num
+
+      if [ -z "${choice_num}" ]; then
+        choice_num=1
+      elif [ ${choice_num} -gt ${num_instances} ]; then
+        echo "Input must be between 1 and ${num_instances}"
+        exit 1
+      fi
+
+      instance_id=$(echo "${instance_ids}" | awk -v field_num="${choice_num}" '{print $field_num}')
+    else
+      # We only need one instance
+      instance_id=$(echo "${instance_ids}" | cut -f1) 
+    fi
+
+    # SSH or tunnel
+    if [ "${action}" == "ssh" ]; then
+      echo "Establishing session manager connection to ${tag_value} (${instance_id})"
+      aws ssm start-session \
+        --target "${instance_id}" \
+        --region "${aws_region}" \
+        --profile "${aws_profile}"
+    elif [ "${action}" == "tunnel" ]; then
+      echo "Creating SSH tunnel to ${tag_value} (${instance_id})"
+      aws ssm start-session \
+        --target "${instance_id}" \
+        --document-name AWS-StartPortForwardingSession \
+        --parameters "{\"portNumber\":[\"22\"],\"localPortNumber\":[\"${port}\"]}" \
+        --region "${aws_region}" \
+        --profile "${aws_profile}"
+    else
+      echo "Unknown action ${action} specified"
+      usage
+      exit 1
+    fi
+  fi
+fi
