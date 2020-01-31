@@ -1,7 +1,9 @@
 #!/bin/bash
 
 # Wrapper around AWS session manager for instance access and SSH tunnels
+
 programname=$0
+version=1.0.4
 
 # Defaults
 action=ssh
@@ -9,6 +11,10 @@ aws_region=us-east-1
 aws_profile=''
 port=9999
 interactive_mode=0
+
+version() {
+  echo "${version}"
+}
 
 usage() {
   echo "Usage:"
@@ -22,6 +28,7 @@ usage() {
   echo "  -o   Local ssh tunnel port (only applicable in tunnel mode; default: 9999)"
   echo "  -i   Enable interactive mode"
   echo "  -h   Display this help"
+  echo "  -v   Display version"
   exit 1
 }
 
@@ -45,8 +52,12 @@ get_instances_by_name_tag() {
 }
 
 # get the options and set flags
-while getopts "a:n:r:p:o:ih" OPTION; do
+while getopts "a:n:r:p:o:ihv" OPTION; do
   case $OPTION in
+  v)
+    version
+    exit 0
+    ;;
   h)
     usage
     exit 1
