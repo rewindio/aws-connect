@@ -1,0 +1,40 @@
+name: tag-and-release
+
+on:
+  push:
+    branches: 
+      - master
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@master
+
+    - name: Get version
+      id: get_version
+      run: |
+        version=$(grep "^version=" aws-connect |cut -f2 -d"=")
+        echo ::set-output name=version::$version
+        echo ::set-output name=version_tag::v$version
+
+    - name: Tag commit
+      uses: tvdias/github-tagger@v0.0.1
+      with:
+        repo-token: "${{ secrets.GITHUB_TOKEN }}"
+        tag: "${{steps.get_version.outputs.version_tag}}"
+
+    - name: Extract from changelog
+      id: extract_changes
+      run: |
+        # Must use a temporary file or it loses the formatting
+        VERSION=${{steps.get_version.outputs.version}}; awk "/## \[$VERSION\]/{flag=1;next}/## \[/{flag=0}flag" CHANGELOG.md > REL-BODY.md
+        
+    - name: Create Release
+      uses: ncipollo/release-action@v1
+      with:
+        tag: ${{steps.get_version.outputs.version_tag}}
+        artifacts: "*.gem, CHANGELOG.md"
+        bodyFile: "REL-BODY.md"
+        token: ${{ secrets.GITHUB_TOKEN }}
