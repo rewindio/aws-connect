@@ -44,33 +44,6 @@ get_instances_by_name_tag() {
   echo "${instance_ids_list}"
 }
 
-# Make sure there is a version of the AWS CLI that supports session manager
-minimum_aws_cli_version=1.16.299
-current_aws_cli_version=$(aws --version 2>&1 | awk '{split($1,array,"/")} END {print array[2]}')
-
-if [ "$(compareable_version "${current_aws_cli_version}")" -lt "$(compareable_version "${minimum_aws_cli_version}")" ]; then
-  echo "Error: AWS CLI version must be greater than ${minimum_aws_cli_version}. Please update your aws cli (pip install awscli --upgrade or brew upgrade awscli)"
-  exit 1
-fi
-
-# Check to make sure the session manager plugin is installed
-if [ ! -e /usr/local/bin/session-manager-plugin ]; then
-  echo "AWS SessionManagerPlugin is not found - installing"
-  echo "See the AWS Session Manager Plugin Docs for more information: http://docs.aws.amazon.com/console/systems-manager/session-manager-plugin-not-found"
-
-  echo "Downloading session manager..."
-  curl -s "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/mac/sessionmanager-bundle.zip" -o "/tmp/sessionmanager-bundle.zip"
-
-  echo "Extracing session manager..."
-  pushd /tmp || exit 1
-  unzip /tmp/sessionmanager-bundle.zip
-  popd || exit 1
-
-  echo "Installing (this will require you to login to your mac)..."
-  sudo /tmp/sessionmanager-bundle/install -i /usr/local/sessionmanagerplugin -b /usr/local/bin/session-manager-plugin
-  rm -rf /tmp/sessionmanager-bundle*
-fi
-
 # get the options and set flags
 while getopts "a:n:r:p:o:ih" OPTION; do
   case $OPTION in
@@ -106,6 +79,33 @@ while getopts "a:n:r:p:o:ih" OPTION; do
     ;;
   esac
 done
+
+# Make sure there is a version of the AWS CLI that supports session manager
+minimum_aws_cli_version=1.16.299
+current_aws_cli_version=$(aws --version 2>&1 | awk '{split($1,array,"/")} END {print array[2]}')
+
+if [ "$(compareable_version "${current_aws_cli_version}")" -lt "$(compareable_version "${minimum_aws_cli_version}")" ]; then
+  echo "Error: AWS CLI version must be greater than ${minimum_aws_cli_version}. Please update your aws cli (pip install awscli --upgrade or brew upgrade awscli)"
+  exit 1
+fi
+
+# Check to make sure the session manager plugin is installed
+if [ ! -e /usr/local/bin/session-manager-plugin ]; then
+  echo "AWS SessionManagerPlugin is not found - installing"
+  echo "See the AWS Session Manager Plugin Docs for more information: http://docs.aws.amazon.com/console/systems-manager/session-manager-plugin-not-found"
+
+  echo "Downloading session manager..."
+  curl -s "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/mac/sessionmanager-bundle.zip" -o "/tmp/sessionmanager-bundle.zip"
+
+  echo "Extracing session manager..."
+  pushd /tmp || exit 1
+  unzip /tmp/sessionmanager-bundle.zip
+  popd || exit 1
+
+  echo "Installing (this will require you to login to your mac)..."
+  sudo /tmp/sessionmanager-bundle/install -i /usr/local/sessionmanagerplugin -b /usr/local/bin/session-manager-plugin
+  rm -rf /tmp/sessionmanager-bundle*
+fi
 
 # Check for mandatory args
 if [ -z "${tag_value}" ]; then
