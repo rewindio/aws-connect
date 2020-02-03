@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [1.0.7]
+
+- added -x flag to pass in instance ID directly
+
+## [1.0.6]
+
+- Added some additional help
+
 ## [1.0.5]
 
 - added github action to release
