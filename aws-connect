@@ -3,7 +3,7 @@
 # Wrapper around AWS session manager for instance access and SSH tunnels
 
 programname=$0
-version=1.0.5
+version=1.0.6
 
 # Defaults
 action=ssh
@@ -19,7 +19,7 @@ version() {
 usage() {
   echo "Usage:"
   echo ""
-  echo "$programname -a ssh|tunnel -n <instance name> [-r region] [-p profile name] [-o port] [-i]"
+  echo "$programname -a ssh|tunnel -n <instance name> [-r region] [-p profile name] [-o port] [-i] [-h] [-v]"
   echo ""
   echo "  -a   Connect interactive session or establish ssh tunnel (default: ssh)"
   echo "  -n   Value for the Name tag of an EC2 instance"

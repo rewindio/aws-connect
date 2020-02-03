@@ -5,7 +5,7 @@ Wrapper script around AWS session manager to establish remote shell connections 
 ## Usage
 
 ```bash
-./aws-connect -a ssh|tunnel -n <instance name> [-r region] [-p profile name] [-o port] [-i]
+/aws-connect -a ssh|tunnel -n <instance name> [-r region] [-p profile name] [-o port] [-i] [-h] [-v]
 
   -a   Connect interactive session or establish ssh tunnel (default: ssh)
   -n   Value for the Name tag of an EC2 instance
@@ -13,6 +13,8 @@ Wrapper script around AWS session manager to establish remote shell connections 
   -p   AWS profile (default: none)
   -o   Local ssh tunnel port (only applicable in tunnel mode; default: 9999)
   -i   Enable interactive mode
+  -h   Display this help
+  -v   Display version
   ```
 
 ## Prerequisites
