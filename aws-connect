@@ -3,7 +3,7 @@
 # Wrapper around AWS session manager for instance access and SSH tunnels
 
 programname=$0
-version=1.0.7
+version=1.0.8
 
 # Defaults
 action=ssh
@@ -19,7 +19,7 @@ version() {
 usage() {
   echo "Usage:"
   echo ""
-  echo "$programname -a ssh|tunnel -n <instance name> [-r region] [-p profile name] [-o port] [-x instance id] [-i] [-h] [-v]"
+  echo "$programname -a ssh|tunnel -n <instance name> [-r region] [-p profile name] [-o port] [-x instance id] [-s] [-h] [-v]"
   echo ""
   echo "  -a   Connect interactive session or establish ssh tunnel (default: ssh)"
   echo "  -n   Value for the Name tag of an EC2 instance"
@@ -27,7 +27,7 @@ usage() {
   echo "  -p   AWS profile (default: none)"
   echo "  -o   Local ssh tunnel port (only applicable in tunnel mode; default: 9999)"
   echo "  -x   override Name tag and connect direct to given instance ID"
-  echo "  -i   Enable interactive mode"
+  echo "  -s   Pick a specific instance ID"
   echo "  -h   Display this help"
   echo "  -v   Display version"
   exit 1
@@ -53,7 +53,7 @@ get_instances_by_name_tag() {
 }
 
 # get the options and set flags
-while getopts "a:n:r:p:o:x:ihv" OPTION; do
+while getopts "a:n:r:p:o:x:shv" OPTION; do
   case $OPTION in
   v)
     version
@@ -85,7 +85,7 @@ while getopts "a:n:r:p:o:x:ihv" OPTION; do
       exit 1
     fi
     ;;
-  i)
+  s)
     interactive_mode=1
     ;;
   *)

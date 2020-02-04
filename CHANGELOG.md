@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [1.0.8]
+
+- Change interactive flag to be consistent with other tooling
+
 ## [1.0.7]
 
 - added -x flag to pass in instance ID directly
