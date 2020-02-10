@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [1.0.9]
+
+- Update readme
+
 ## [1.0.8]
 
 - Change interactive flag to be consistent with other tooling
