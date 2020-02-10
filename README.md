@@ -5,14 +5,17 @@ Wrapper script around AWS session manager to establish remote shell connections 
 ## Usage
 
 ```bash
-/aws-connect -a ssh|tunnel -n <instance name> [-r region] [-p profile name] [-o port] [-i] [-h] [-v]
+Usage:
+
+/usr/local/bin/aws-connect -a ssh|tunnel -n <instance name> [-r region] [-p profile name] [-o port] [-x instance id] [-s] [-h] [-v]
 
   -a   Connect interactive session or establish ssh tunnel (default: ssh)
   -n   Value for the Name tag of an EC2 instance
   -r   AWS region (default: us-east-1)
   -p   AWS profile (default: none)
   -o   Local ssh tunnel port (only applicable in tunnel mode; default: 9999)
-  -i   Enable interactive mode
+  -x   override Name tag and connect direct to given instance ID
+  -s   Pick a specific instance ID
   -h   Display this help
   -v   Display version
   ```
@@ -33,7 +36,7 @@ NOTE: If there are multiple instances with the same tag, one is chosen
 
 2. Establish an interactive shell session with a specfic instance tagged with a Name of my-app in the us-east-2 region using the AWS CLI profile
 
-`aws-connect -a ssh -n my-app -r us-east-2 -p staging -i`
+`aws-connect -a ssh -n my-app -r us-east-2 -p staging -s`
 
 In this case, a list of instance IDs will be provided and one can be chosen to connect to
 
