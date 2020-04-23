@@ -7,10 +7,11 @@ Wrapper script around AWS session manager to establish remote shell connections 
 ```bash
 Usage:
 
-/usr/local/bin/aws-connect -a ssh|tunnel -n <instance name> [-r region] [-p profile name] [-o port] [-x instance id] [-s] [-h] [-v]
+/usr/local/bin/aws-connect -a ssh|tunnel [-n <instance name>|-t <instance tag>] [-r region] [-p profile name] [-o port] [-x instance id] [-s] [-h] [-v]
 
   -a   Connect interactive session or establish ssh tunnel (default: ssh)
   -n   Value for the Name tag of an EC2 instance
+  -t   Specify a tag instead of a name. The tag can be 'key' or 'key=value'
   -r   AWS region (default: us-east-1)
   -p   AWS profile (default: none)
   -o   Local ssh tunnel port (only applicable in tunnel mode; default: 9999)
@@ -34,7 +35,7 @@ Usage:
 
 NOTE: If there are multiple instances with the same tag, one is chosen
 
-2. Establish an interactive shell session with a specfic instance tagged with a Name of my-app in the us-east-2 region using the AWS CLI profile
+2. Establish an interactive shell session with a specific instance tagged with a Name of my-app in the us-east-2 region using the AWS CLI profile
 
 `aws-connect -a ssh -n my-app -r us-east-2 -p staging -s`
 
@@ -45,3 +46,12 @@ In this case, a list of instance IDs will be provided and one can be chosen to c
 `aws-connect -a tunnel -n my-app -r us-east-2 -p staging -o 8888`
 
 The SSH tunnel can then be used for things like connecting to an RDS database that the instance may have access to. Just point your DB client to localhost, port 8888 for the SSH forwarding.
+
+4. Establish an interactive shell session with a specific instance with a tag CLUSTER (will list all instances with that tag and ask for input)
+
+`aws-connect -s -t CLUSTER`
+
+4. Establish an interactive shell session with a specific instance with a tag CLUSTER=prod (will list all instances with that tag and ask for input)
+
+`aws-connect -s -t CLUSTER=prod`
+

@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [1.0.10]
+
+- Support for specifying an instance by tag
+
 ## [1.0.9]
 
 - Update readme
