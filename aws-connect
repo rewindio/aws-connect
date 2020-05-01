@@ -3,7 +3,7 @@
 # Wrapper around AWS session manager for instance access and SSH tunnels
 
 programname=$0
-version=1.0.9
+version=1.0.10
 
 # Defaults
 action=ssh
@@ -19,10 +19,11 @@ version() {
 usage() {
   echo "Usage:"
   echo ""
-  echo "$programname -a ssh|tunnel -n <instance name> [-r region] [-p profile name] [-o port] [-x instance id] [-s] [-h] [-v]"
+  echo "$programname -a ssh|tunnel [-n <instance name>|-t <instance tag>] [-r region] [-p profile name] [-o port] [-x instance id] [-s] [-h] [-v]"
   echo ""
   echo "  -a   Connect interactive session or establish ssh tunnel (default: ssh)"
   echo "  -n   Value for the Name tag of an EC2 instance"
+  echo "  -t   Specify a tag instead of a name. The tag can be 'key' or 'key=value'"
   echo "  -r   AWS region (default: us-east-1)"
   echo "  -p   AWS profile (default: none)"
   echo "  -o   Local ssh tunnel port (only applicable in tunnel mode; default: 9999)"
@@ -37,23 +38,32 @@ compareable_version() {
   echo "$@" | awk -F. '{ printf("%d%03d%03d%03d\n", $1,$2,$3,$4); }';
 }
 
-get_instances_by_name_tag() {
-  name_tag=$1
+get_instances_by_tag() {
+  tag_key=${1%%=*}
+  tag_value=${1#*=}
   region=$2
   profile=$3
 
+  if [ "$tag_value" == "$1" ]; then
+    # No tag value specified
+    tag_filter="Name=tag-key,Values=${tag_key}"
+  else
+    tag_filter="Name=tag:${tag_key},Values=${tag_value}"
+  fi
+
   instance_ids_list=$(aws ec2 describe-instances \
-    --filters "Name=tag:Name,Values=${name_tag}" "Name=instance-state-name,Values=running"  \
-    --query 'Reservations[].Instances[].InstanceId' \
+    --filters "$tag_filter" "Name=instance-state-name,Values=running"  \
+    --query 'Reservations[*].Instances[*].{Instance:InstanceId,Name:Tags[?Key==`Name`]|[0].Value}' \
     --output text \
     --region "${region}" \
     --profile "${profile}")
 
+  # Returns a space delimitted list of instance_id,Name
   echo "${instance_ids_list}"
 }
 
 # get the options and set flags
-while getopts "a:n:r:p:o:x:shv" OPTION; do
+while getopts "a:n:t:r:p:o:x:shv" OPTION; do
   case $OPTION in
   v)
     version
@@ -73,6 +83,9 @@ while getopts "a:n:r:p:o:x:shv" OPTION; do
     aws_profile=$OPTARG
     ;;
   n)
+    tag_value="Name=$OPTARG"
+    ;;
+  t)
     tag_value=$OPTARG
     ;;
   x)
@@ -132,18 +145,29 @@ fi
 # If both tag and instance ID are set, use instance id
 if [ -z "${instance_id}" ]; then
   # Get the list of instances
-  instance_ids=$(get_instances_by_name_tag "${tag_value}" "${aws_region}" "${aws_profile}")
+  instance_ids=$(get_instances_by_tag "${tag_value}" "${aws_region}" "${aws_profile}")
 
   if [ -z "${instance_ids}" ]; then
-    echo "No instances available named ${tag_value} in region ${aws_region}"
+    echo "No instances available with tag ${tag_value} in region ${aws_region}"
   else
+    # Parse instance id ouput
+    declare -a arr_instance_ids
+    declare -a arr_instance_names
+    i=1
+    while IFS= read -r line; do
+        arr_instance_ids[i]=$(sed -e 's/^\([^[:blank:]]\{1,\}\).*$/\1/' <<< "$line")
+        arr_instance_names[i]=$(sed -e 's/^\([^[:blank:]]\{1,\}[[:blank:]]\{1,\}\)//' <<< "$line")
+
+        i=$(( i + 1 ))
+    done <<< "$instance_ids"
+
     if [ "${interactive_mode}" -eq 1 ]; then
       echo "Select an instance to connect to"
 
       inst_num=1
-      for instance in ${instance_ids}
+      for instance in ${arr_instance_ids[@]}
       do
-        echo "${inst_num}) ${instance}"
+        echo "${inst_num}) ${arr_instance_ids[inst_num]} (${arr_instance_names[inst_num]})"
         inst_num=$(( inst_num + 1 ))
       done
 
@@ -159,17 +183,19 @@ if [ -z "${instance_id}" ]; then
         exit 1
       fi
 
-      instance_id=$(echo "${instance_ids}" | awk -v field_num="${choice_num}" '{print $field_num}')
+      instance_id=${arr_instance_ids[choice_num]}
+      instance_name=${arr_instance_names[choice_num]}
     else
       # We only need one instance
-      instance_id=$(echo "${instance_ids}" | cut -f1) 
+      instance_id=${arr_instance_ids[1]}
+      instance_name=${arr_instance_names[1]}
     fi
   fi
 fi
 
   # SSH or tunnel
 if [ "${action}" == "ssh" ]; then
-  echo "Establishing session manager connection to ${tag_value} (${instance_id})"
+  echo "Establishing session manager connection to ${instance_name} (${instance_id})"
   aws ssm start-session \
     --target "${instance_id}" \
     --region "${aws_region}" \
