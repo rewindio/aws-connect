@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [1.0.11]
+
+- @JonaC22 check for session manager plugin in additional location
+
 ## [1.0.10]
 
 - Support for specifying an instance by tag
