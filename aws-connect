@@ -118,7 +118,7 @@ if [ "$(compareable_version "${current_aws_cli_version}")" -lt "$(compareable_ve
 fi
 
 # Check to make sure the session manager plugin is installed
-if [ ! -e /usr/local/bin/session-manager-plugin ]; then
+if [ ! -e /usr/local/bin/session-manager-plugin ] && [ ! session-manager-plugin ]; then
   echo "AWS SessionManagerPlugin is not found - installing"
   echo "See the AWS Session Manager Plugin Docs for more information: http://docs.aws.amazon.com/console/systems-manager/session-manager-plugin-not-found"
 
