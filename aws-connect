@@ -19,9 +19,12 @@ version() {
 usage() {
   echo "Usage:"
   echo ""
-  echo "$programname -a ssh|tunnel [-n <instance name>|-t <instance tag>] [-r region] [-p profile name] [-o port] [-x instance id] [-s] [-h] [-v]"
+  echo "$programname -a ssh|tunnel|document [-d document name] [-c document parameters] [-g github access token location] [-n <instance name>|-t <instance tag>] [-r region] [-p profile name] [-o port] [-x instance id] [-s] [-h] [-v]"
   echo ""
   echo "  -a   Connect interactive session or establish ssh tunnel (default: ssh)"
+  echo "  -d   Run an ssm document on a specified EC2 instance"
+  echo "  -c   Optional parameters if required to run an ssm document"
+  echo "  -g   Optional. The location of your github personal access token in aws ssm parameter store"
   echo "  -n   Value for the Name tag of an EC2 instance"
   echo "  -t   Specify a tag instead of a name. The tag can be 'key' or 'key=value'"
   echo "  -r   AWS region (default: us-east-1)"
@@ -63,7 +66,7 @@ get_instances_by_tag() {
 }
 
 # get the options and set flags
-while getopts "a:n:t:r:p:o:x:shv" OPTION; do
+while getopts "a:d:c:g:n:t:r:p:o:x:shv" OPTION; do
   case $OPTION in
   v)
     version
@@ -101,6 +104,15 @@ while getopts "a:n:t:r:p:o:x:shv" OPTION; do
   s)
     interactive_mode=1
     ;;
+  d)
+    document_name=$OPTARG
+    ;;
+  c)
+    document_parameters=$OPTARG
+    ;;
+  g)
+    github_token_location=$OPTARG
+    ;;      
   *)
     echo "Incorrect options provided"
     exit 1
@@ -193,7 +205,7 @@ if [ -z "${instance_id}" ]; then
   fi
 fi
 
-  # SSH or tunnel
+  # SSH, tunnel, or document
 if [ "${action}" == "ssh" ]; then
   echo "Establishing session manager connection to ${instance_name} (${instance_id})"
   aws ssm start-session \
@@ -208,6 +220,55 @@ elif [ "${action}" == "tunnel" ]; then
     --parameters "{\"portNumber\":[\"22\"],\"localPortNumber\":[\"${port}\"]}" \
     --region "${aws_region}" \
     --profile "${aws_profile}"
+elif [ "${action}" == "document" ]; then
+
+  if [ -z "${github_token_location}" ]
+  then
+    echo "No github token"
+    document_parameters="parameters='${document_parameters}'"
+  else
+    document_parameters="githubTokenLocation='${github_token_location}',parameters='${document_parameters}'"
+    echo "Github token found"
+  fi
+
+  echo "Running ${document_name} on instance ${instance_id}"
+  
+  sh_command_id=$( aws ssm send-command \
+    --instance-ids ${instance_id} \
+    --document-name "${document_name}" \
+    --comment "Document run using aws-connect" \
+    --output text \
+    --parameters "${document_parameters}" \
+    --region ${aws_region} \
+    --profile ${aws_profile} \
+    --query "Command.CommandId") 
+
+  output=$(aws ssm list-command-invocations \
+    --command-id ${sh_command_id} \
+    --details)
+
+  status=$(echo $output | jq -r '.[]' | jq -r '.[]' | jq -r '.Status')
+
+  # wait for the command to finish running before getting the output
+  while [ "$status" == "InProgress" ]
+  do
+    echo "Command still running..."
+    sleep 5
+
+    output=$(aws ssm list-command-invocations \
+      --command-id ${sh_command_id} \
+      --details)
+
+    status=$(echo $output | jq -r '.[]' | jq -r '.[]' | jq -r '.Status' )
+  done
+
+  if [ "$status" == "Failed" ]
+  then
+    echo "Command Failed!"
+  fi
+
+  echo $output | jq -r '.[]' | jq -r '.[]' | jq -r '.CommandPlugins' | jq -r '.[1]' | jq -r '.Output'
+
 else
   echo "Unknown action ${action} specified"
   usage
