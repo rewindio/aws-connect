@@ -260,6 +260,8 @@ elif [ "${action}" == "document" ]; then
     --no-paginate \
     --query "CommandInvocations[0].Status")
 
+  echo "Command ID: $sh_command_id"
+
   # wait for the command to finish running before getting the output
   while [ "$status" == "InProgress" ]
   do
