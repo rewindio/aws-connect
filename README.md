@@ -7,9 +7,9 @@ Wrapper script around AWS session manager to establish remote shell connections 
 ```bash
 Usage:
 
-/usr/local/bin/aws-connect -a ssh|tunnel [-n <instance name>|-t <instance tag>] [-r region] [-p profile name] [-o port] [-x instance id] [-s] [-h] [-v]
+/usr/local/bin/aws-connect [-a ssh|tunnel|document] [-d <document name>] [-c <document parameters>] [-g <github access token location>] [-n <instance name>|-t <instance tag>] [-r <region>] [-p <profile name>] [-o <port>] [-x <instance id>] [-s] [-h] [-v]
 
-  -a   Connect interactive session, establish ssh tunnel, or run an ssm document on an instance (default: ssh)
+  -a   Connect interactive session (ssh), establish tunnel (tunnel), or run an ssm document (document) on an instance (default: ssh)
   -n   Value for the Name tag of an EC2 instance
   -t   Specify a tag instead of a name. The tag can be 'key' or 'key=value'
   -r   AWS region (default: us-east-1)
@@ -18,9 +18,9 @@ Usage:
   -x   override Name tag and connect direct to given instance ID
   -s   Pick a specific instance ID
   -h   Display this help
-  -d   Specify the name of the ssm document to run
-  -c   Values for the ssm document parameters
-  -g   The location in ssm of the github token to use
+  -d   Specify the name of the ssm document to run. Only needed if running ssm document action.
+  -c   Values for the ssm document arguements (Optional)
+  -g   The location in aws ssm parameter store of the github token to use (Optional)
   -v   Display version
   ```
 
@@ -58,6 +58,10 @@ The SSH tunnel can then be used for things like connecting to an RDS database th
 
 `aws-connect -s -t CLUSTER=prod`
 
-5. Run SSM Document named shell-script on shopify with default profile and parameters 'param1 param 2'. Github token and document are required: 
+5. Run SSM Document named shell-script on shopify with default profile and arguments 'param1 param 2'. Document is required, github token is only required for private repos: 
 
-`aws-connect -x instance -r region -p default -a document -d shell-script -p default -c 'param1 "param 2"' -g <token_location>` 
+`aws-connect -x instance -r region -p default -a document -d shell-script -p default -c 'param1 "param 2"' -g /devops/github_token` 
+
+6. Run SSM Document named shell-script on shopify with default profile and no arguements on a public repo: 
+
+`aws-connect -x instance -r region -p default -a document -d shell-script -p default` 
