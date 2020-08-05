@@ -281,7 +281,7 @@ elif [ "${action}" == "document" ]; then
     echo "Command Failed!"
   fi
 
-  echo $(aws logs get-log-events --log-group-name ${cloudwatch_group} --log-stream-name ${sh_command_id}/${instance_id}/runShellScript/stdout --query "events[0].message")
+  printf "$(aws logs get-log-events --log-group-name ${cloudwatch_group} --log-stream-name ${sh_command_id}/${instance_id}/runShellScript/stdout --query "events[0].message")"
 
 else
   echo "Unknown action ${action} specified"
