@@ -19,12 +19,12 @@ version() {
 usage() {
   echo "Usage:"
   echo ""
-  echo "$programname -a ssh|tunnel|document [-d document name] [-c document parameters] [-g github access token location] [-n <instance name>|-t <instance tag>] [-r region] [-p profile name] [-o port] [-x instance id] [-s] [-h] [-v]"
+  echo "$programname [-a ssh|tunnel|document] [-d <document name>] [-c <document parameters>] [-g <github access token location>] [-n <instance name>|-t <instance tag>] [-r <region>] [-p <profile name>] [-o <port>] [-x <instance id>] [-s] [-h] [-v]"
   echo ""
-  echo "  -a   Connect interactive session or establish ssh tunnel (default: ssh)"
-  echo "  -d   Run an ssm document on a specified EC2 instance"
-  echo "  -c   Optional parameters if required to run an ssm document"
-  echo "  -g   Optional. The location of your github personal access token in aws ssm parameter store"
+  echo "  -a   Connect interactive session (ssh), establish tunnel (tunnel), or run an ssm document (document) on an instance (default: ssh)"
+  echo "  -d   Specify the name of the ssm document to run. Only needed if running ssm document action."
+  echo "  -c   Values for the ssm document arguements (Optional)"
+  echo "  -g   The location in aws ssm parameter store of the github token to use (Optional)"
   echo "  -n   Value for the Name tag of an EC2 instance"
   echo "  -t   Specify a tag instead of a name. The tag can be 'key' or 'key=value'"
   echo "  -r   AWS region (default: us-east-1)"
@@ -224,11 +224,16 @@ elif [ "${action}" == "document" ]; then
 
   if [ -z "${github_token_location}" ]
   then
-    echo "No github token"
-    document_parameters="parameters='${document_parameters}'"
+    echo "No github token provided - scripts referenced in SSM document must be in a public repo if no token is provided"
   else
-    document_parameters="githubTokenLocation='${github_token_location}',parameters='${document_parameters}'"
-    echo "Github token found"
+    arguements="githubTokenLocation='${github_token_location}',"
+  fi
+
+  if [ -z "${document_parameters}" ]
+  then
+    arguements=${arguements::${#arguements}-1}
+  else
+    arguements=$arguements"parameters='${document_parameters}'"
   fi
 
   echo "Running ${document_name} on instance ${instance_id}"
@@ -238,16 +243,17 @@ elif [ "${action}" == "document" ]; then
     --document-name "${document_name}" \
     --comment "Document run using aws-connect" \
     --output text \
-    --parameters "${document_parameters}" \
+    --parameters "${arguements}" \
     --region ${aws_region} \
     --profile ${aws_profile} \
-    --query "Command.CommandId") 
+    --query "Command.CommandId")
 
-  output=$(aws ssm list-command-invocations \
-    --command-id ${sh_command_id} \
-    --details)
-
-  status=$(echo $output | jq -r '.[]' | jq -r '.[]' | jq -r '.Status')
+  status=$(aws ssm list-command-invocations \
+    --command-id "${sh_command_id}" \
+    --details \
+    --output text \
+    --no-paginate \
+    --query "CommandInvocations[0].Status")
 
   # wait for the command to finish running before getting the output
   while [ "$status" == "InProgress" ]
@@ -255,11 +261,12 @@ elif [ "${action}" == "document" ]; then
     echo "Command still running..."
     sleep 5
 
-    output=$(aws ssm list-command-invocations \
-      --command-id ${sh_command_id} \
-      --details)
-
-    status=$(echo $output | jq -r '.[]' | jq -r '.[]' | jq -r '.Status' )
+    status=$(aws ssm list-command-invocations \
+      --command-id "${sh_command_id}" \
+      --details \
+      --output text \
+      --no-paginate \
+      --query "CommandInvocations[0].Status")  
   done
 
   if [ "$status" == "Failed" ]
@@ -267,7 +274,12 @@ elif [ "${action}" == "document" ]; then
     echo "Command Failed!"
   fi
 
-  echo $output | jq -r '.[]' | jq -r '.[]' | jq -r '.CommandPlugins' | jq -r '.[1]' | jq -r '.Output'
+  echo $(aws ssm list-command-invocations \
+    --command-id "${sh_command_id}" \
+    --details \
+    --output text \
+    --no-paginate \
+    --query "CommandInvocations[0].CommandPlugins[1].Output")
 
 else
   echo "Unknown action ${action} specified"
