@@ -23,7 +23,7 @@ usage() {
   echo ""
   echo "  -a   Connect interactive session (ssh), establish tunnel (tunnel), or run an ssm document (document) on an instance (default: ssh)"
   echo "  -d   Specify the name of the ssm document to run. Only needed if running ssm document action."
-  echo "  -w   Values for the ssm document arguements (Optional)"
+  echo "  -w   Values for the ssm document arguments (Optional)"
   echo "  -g   The location in aws ssm parameter store of the github token to use (Optional)"
   echo "  -c   The name of the cloudwatch group to store logs in. Required for running documents, defaults to aws-connect"
   echo "  -n   Value for the Name tag of an EC2 instance"
@@ -230,14 +230,14 @@ elif [ "${action}" == "document" ]; then
   then
     echo "No github token provided - scripts referenced in SSM document must be in a public repo if no token is provided"
   else
-    arguements="githubTokenLocation='${github_token_location}',"
+    arguments="githubTokenLocation='${github_token_location}',"
   fi
 
   if [ -z "${document_parameters}" ]
   then
-    arguements="${arguements::${#arguements}-1}"
+    arguments="${arguments::${#arguments}-1}"
   else
-    arguements="${arguements}parameters='${document_parameters}'"
+    arguments="${arguments}parameters='${document_parameters}'"
   fi
 
   if [ -z "${cloudwatch_group}" ]
@@ -252,7 +252,7 @@ elif [ "${action}" == "document" ]; then
     --document-name "${document_name}" \
     --comment "Document run using aws-connect" \
     --output text \
-    --parameters "${arguements}" \
+    --parameters "${arguments}" \
     --region ${aws_region} \
     --profile ${aws_profile} \
     --cloud-watch-output-config '{"CloudWatchLogGroupName":"'${cloudwatch_group}'","CloudWatchOutputEnabled":true}' \

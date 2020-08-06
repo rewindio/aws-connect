@@ -19,7 +19,7 @@ Usage:
   -s   Pick a specific instance ID
   -h   Display this help
   -d   Specify the name of the ssm document to run. Only needed if running ssm document action.
-  -w   Values for the ssm document arguements (Optional)
+  -w   Values for the ssm document arguments (Optional)
   -g   The location in aws ssm parameter store of the github token to use (Optional)
   -c   The name of the cloudwatch group to store logs in. Required for running documents, defaults to aws-connect
   -v   Display version
@@ -63,6 +63,6 @@ The SSH tunnel can then be used for things like connecting to an RDS database th
 
 `aws-connect -x instance -r region -p default -a document -d shell-script -p default -w 'param1 "param 2"' -g /devops/github_token -c ssm-cloudwatch-logs` 
 
-6. Run SSM Document named shell-script on shopify with default profile and no arguements on a public repo. The cloudwatch log name has been changed to ssm-cloudwatch-logs. Document is required: 
+6. Run SSM Document named shell-script on shopify with default profile and no arguments on a public repo. The cloudwatch log name has been changed to ssm-cloudwatch-logs. Document is required: 
 
 `aws-connect -x instance -r region -p default -a document -d shell-script -p default -c ssm-cloudwatch-logs` 
