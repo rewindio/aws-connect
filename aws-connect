@@ -25,7 +25,7 @@ usage() {
   echo "  -d   Specify the name of the ssm document to run. Only needed if running ssm document action."
   echo "  -w   Values for the ssm document arguements (Optional)"
   echo "  -g   The location in aws ssm parameter store of the github token to use (Optional)"
-  echo "  -c   The name of the cloudwatch group to store logs in. Required for running documents."
+  echo "  -c   The name of the cloudwatch group to store logs in. Required for running documents, defaults to aws-connect"
   echo "  -n   Value for the Name tag of an EC2 instance"
   echo "  -t   Specify a tag instead of a name. The tag can be 'key' or 'key=value'"
   echo "  -r   AWS region (default: us-east-1)"
@@ -238,6 +238,11 @@ elif [ "${action}" == "document" ]; then
     arguements="${arguements::${#arguements}-1}"
   else
     arguements="${arguements}parameters='${document_parameters}'"
+  fi
+
+  if [ -z "${cloudwatch_group}" ]
+  then
+    cloudwatch_group="aws-connect"
   fi
 
   echo "Running ${document_name} on instance ${instance_id}"
