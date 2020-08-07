@@ -246,14 +246,14 @@ elif [ "${action}" == "document" ]; then
 
   # create the send-command as a string so that parameters can be appended on if needed
   aws_command="aws ssm send-command \
---instance-ids ${instance_id} \
---document-name \"${document_name}\" \
---comment \"Document run using aws-connect\" \
---output text \
---region ${aws_region} \
---profile ${aws_profile} \
---cloud-watch-output-config '{\"CloudWatchLogGroupName\":\"${cloudwatch_group}\",\"CloudWatchOutputEnabled\":true}' \
---query \"Command.CommandId\""
+    --instance-ids ${instance_id} \
+    --document-name \"${document_name}\" \
+    --comment \"Document run using aws-connect\" \
+    --output text \
+    --region ${aws_region} \
+    --profile ${aws_profile} \
+    --cloud-watch-output-config '{\"CloudWatchLogGroupName\":\"${cloudwatch_group}\",\"CloudWatchOutputEnabled\":true}' \
+    --query \"Command.CommandId\""
 
   if [ -n "${arguments}" ]; then
     aws_command="${aws_command} --parameters ${arguments}"
@@ -313,23 +313,17 @@ elif [ "${action}" == "document" ]; then
     # check if the command has succeeded. If so then get the command output
     if [ "Success" == "${status}" ]; then
 
-      log_streams=$(aws logs describe-log-streams --log-group-name ${cloudwatch_group} --log-stream-name-prefix "${sh_command_id}/${instance_id}" --query "logStreams[*].logStreamName")
-
-      log_streams="${log_streams:1:${#log_streams}-2}"
+      log_streams=$(aws logs describe-log-streams --log-group-name ${cloudwatch_group} --log-stream-name-prefix "${sh_command_id}/${instance_id}" --output text --query "logStreams[*].logStreamName")
 
       for log in ${log_streams[@]}; do
 
-        log=${log%\",}
-        log=${log%\"}
-        log=${log#\"}
-
-        printf "$(aws logs get-log-events --log-group-name ${cloudwatch_group} --log-stream-name "${log}" --query "events[0].message")\n\n"
+        echo $(aws logs get-log-events --log-group-name ${cloudwatch_group} --log-stream-name ${log} --query "events[0].message")
+        printf "\n\n"
 
       done
 
-      printf "\n"
-      printf "Log output is limited to 1MB. For the full logs, visit https://console.aws.amazon.com/cloudwatch/home then \
-view the streams starting with '${sh_command_id}/${instance_id}/' under the log group ${cloudwatch_group}"
+      printf "Log output is limited to 1MB. For the full logs, visit: "
+      printf 'https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#logsV2:log-groups/log-group/%s/$3FlogStreamNameFilter=%s/%s' "${cloudwatch_group}" "${sh_command_id}" "${instance_id}"
 
       endLoop="true"
     fi
