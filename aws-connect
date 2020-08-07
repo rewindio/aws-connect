@@ -259,8 +259,6 @@ elif [ "${action}" == "document" ]; then
     aws_command="${aws_command} --parameters ${arguments}"
   fi
 
-  echo "Command to execute: ${aws_command}"
-
   # execute the command
   sh_command_id=$(eval $aws_command)
 
@@ -268,6 +266,9 @@ elif [ "${action}" == "document" ]; then
     echo "Unable to execute command!"
     exit 0
   fi
+
+  echo "Command ID: $sh_command_id"
+  
   # get the status of the command
   status=$(aws ssm list-command-invocations \
     --command-id "${sh_command_id}" \
@@ -275,8 +276,6 @@ elif [ "${action}" == "document" ]; then
     --output text \
     --no-paginate \
     --query "CommandInvocations[0].Status")
-
-  echo "Command ID: $sh_command_id"
 
   ssm_failed_statuses=("Cancelled"
   "Failed"
@@ -324,13 +323,13 @@ elif [ "${action}" == "document" ]; then
         log=${log%\"}
         log=${log#\"}
 
-        printf "$(aws logs get-log-events --log-group-name ${cloudwatch_group} --log-stream-name ${log} --query "events[0].message")\n\n"
+        printf "$(aws logs get-log-events --log-group-name ${cloudwatch_group} --log-stream-name "${log}" --query "events[0].message")\n\n"
 
       done
 
-      echo "\n"
+      printf "\n"
       printf "Log output is limited to 1MB. For the full logs, visit https://console.aws.amazon.com/cloudwatch/home then \
-view the stream '${sh_command_id}/${instance_id}/' under the log group ${cloudwatch_group}"
+view the streams starting with '${sh_command_id}/${instance_id}/' under the log group ${cloudwatch_group}"
 
       endLoop="true"
     fi
