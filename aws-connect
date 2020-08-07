@@ -19,9 +19,13 @@ version() {
 usage() {
   echo "Usage:"
   echo ""
-  echo "$programname -a ssh|tunnel [-n <instance name>|-t <instance tag>] [-r region] [-p profile name] [-o port] [-x instance id] [-s] [-h] [-v]"
+  echo "$programname [-a ssh|tunnel|document] [-d <document name>] [-c <document parameters>] [-g <github access token location>] [-n <instance name>|-t <instance tag>] [-r <region>] [-p <profile name>] [-o <port>] [-x <instance id>] [-s] [-h] [-v]"
   echo ""
-  echo "  -a   Connect interactive session or establish ssh tunnel (default: ssh)"
+  echo "  -a   Connect interactive session (ssh), establish tunnel (tunnel), or run an ssm document (document) on an instance (default: ssh)"
+  echo "  -d   Specify the name of the ssm document to run. Only needed if running ssm document action."
+  echo "  -w   Values for the ssm document arguments (Optional)"
+  echo "  -g   The location in aws ssm parameter store of the github token to use (Optional)"
+  echo "  -c   The name of the cloudwatch group to store logs in. Required for running documents, defaults to aws-connect"
   echo "  -n   Value for the Name tag of an EC2 instance"
   echo "  -t   Specify a tag instead of a name. The tag can be 'key' or 'key=value'"
   echo "  -r   AWS region (default: us-east-1)"
@@ -63,7 +67,7 @@ get_instances_by_tag() {
 }
 
 # get the options and set flags
-while getopts "a:n:t:r:p:o:x:shv" OPTION; do
+while getopts "a:d:c:g:w:n:t:r:p:o:x:shv" OPTION; do
   case $OPTION in
   v)
     version
@@ -100,6 +104,18 @@ while getopts "a:n:t:r:p:o:x:shv" OPTION; do
     ;;
   s)
     interactive_mode=1
+    ;;
+  d)
+    document_name=$OPTARG
+    ;;
+  w)
+    document_parameters=$OPTARG
+    ;;
+  g)
+    github_token_location=$OPTARG
+    ;;      
+  c)
+    cloudwatch_group=$OPTARG
     ;;
   *)
     echo "Incorrect options provided"
@@ -193,7 +209,7 @@ if [ -z "${instance_id}" ]; then
   fi
 fi
 
-  # SSH or tunnel
+  # SSH, tunnel, or document
 if [ "${action}" == "ssh" ]; then
   echo "Establishing session manager connection to ${instance_name} (${instance_id})"
   aws ssm start-session \
@@ -208,6 +224,112 @@ elif [ "${action}" == "tunnel" ]; then
     --parameters "{\"portNumber\":[\"22\"],\"localPortNumber\":[\"${port}\"]}" \
     --region "${aws_region}" \
     --profile "${aws_profile}"
+elif [ "${action}" == "document" ]; then
+
+  if [ -n "${github_token_location}" ]; then
+    arguments="githubTokenLocation='${github_token_location}'"
+  fi
+
+  if [ -n "${document_parameters}" ]; then
+    if [ -n "${arguments}" ]; then
+      arguments="${arguments},parameters='${document_parameters}'"
+    else
+      arguments="parameters='${document_parameters}'"
+    fi
+  fi
+
+  if [ -z "${cloudwatch_group}" ]; then
+    cloudwatch_group="aws-connect"
+  fi
+
+  echo "Running ${document_name} on instance ${instance_id}"  
+
+  # create the send-command as a string so that parameters can be appended on if needed
+  aws_command="aws ssm send-command \
+    --instance-ids ${instance_id} \
+    --document-name \"${document_name}\" \
+    --comment \"Document run using aws-connect\" \
+    --output text \
+    --region ${aws_region} \
+    --profile ${aws_profile} \
+    --cloud-watch-output-config '{\"CloudWatchLogGroupName\":\"${cloudwatch_group}\",\"CloudWatchOutputEnabled\":true}' \
+    --query \"Command.CommandId\""
+
+  if [ -n "${arguments}" ]; then
+    aws_command="${aws_command} --parameters ${arguments}"
+  fi
+
+  # execute the command
+  sh_command_id=$(eval $aws_command)
+
+  if [ "$?" != "0" ]; then
+    echo "Unable to execute command!"
+    exit 0
+  fi
+
+  echo "Command ID: $sh_command_id"
+  
+  # get the status of the command
+  status=$(aws ssm list-command-invocations \
+    --command-id "${sh_command_id}" \
+    --details \
+    --output text \
+    --no-paginate \
+    --query "CommandInvocations[0].Status")
+
+  ssm_failed_statuses=("Cancelled"
+  "Failed"
+  "Delivery Timed Out"
+  "Execution Timed Out"
+  "Failed"
+  "Invalid Platform"
+  "Undeliverable"
+  "Terminated"
+  "Access Denied"
+  "InvalidParameters")
+
+  # while the command has not failed or succeeded check the status every 5 seconds
+  endLoop="false"
+  while [ "${endLoop}" == "false" ]; do
+
+    echo "Command still running..."
+    sleep 5
+    
+    status=$(aws ssm list-command-invocations \
+      --command-id "${sh_command_id}" \
+      --details \
+      --output text \
+      --no-paginate \
+      --query "CommandInvocations[0].Status")  
+
+    # check if the command has failed
+    for (( i = 0; i < "${#ssm_failed_statuses[@]}"; i++ )); do
+      if [ "${ssm_failed_statuses[$i]}" == "${status}" ]; then
+        echo "Failure Status: ${ssm_failed_statuses[$i]}!"
+        endLoop="true"
+      fi
+    done
+
+    # check if the command has succeeded. If so then get the command output
+    if [ "Success" == "${status}" ]; then
+
+      log_streams=$(aws logs describe-log-streams --log-group-name ${cloudwatch_group} --log-stream-name-prefix "${sh_command_id}/${instance_id}" --output text --query "logStreams[*].logStreamName")
+
+      for log in ${log_streams[@]}; do
+
+        echo $(aws logs get-log-events --log-group-name ${cloudwatch_group} --log-stream-name ${log} --query "events[0].message")
+        printf "\n\n"
+
+      done
+
+      printf "Log output is limited to 1MB. For the full logs, visit: "
+      printf 'https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#logsV2:log-groups/log-group/%s/$3FlogStreamNameFilter=%s/%s' "${cloudwatch_group}" "${sh_command_id}" "${instance_id}"
+
+      endLoop="true"
+    fi
+
+  done
+
 else
   echo "Unknown action ${action} specified"
   usage

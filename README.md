@@ -7,9 +7,9 @@ Wrapper script around AWS session manager to establish remote shell connections 
 ```bash
 Usage:
 
-/usr/local/bin/aws-connect -a ssh|tunnel [-n <instance name>|-t <instance tag>] [-r region] [-p profile name] [-o port] [-x instance id] [-s] [-h] [-v]
+/usr/local/bin/aws-connect [-a ssh|tunnel|document] [-d <document name>] [-c <document parameters>] [-g <github access token location>] [-n <instance name>|-t <instance tag>] [-r <region>] [-p <profile name>] [-o <port>] [-x <instance id>] [-s] [-h] [-v]
 
-  -a   Connect interactive session or establish ssh tunnel (default: ssh)
+  -a   Connect interactive session (ssh), establish tunnel (tunnel), or run an ssm document (document) on an instance (default: ssh)
   -n   Value for the Name tag of an EC2 instance
   -t   Specify a tag instead of a name. The tag can be 'key' or 'key=value'
   -r   AWS region (default: us-east-1)
@@ -18,6 +18,10 @@ Usage:
   -x   override Name tag and connect direct to given instance ID
   -s   Pick a specific instance ID
   -h   Display this help
+  -d   Specify the name of the ssm document to run. Only needed if running ssm document action.
+  -w   Values for the ssm document arguments (Optional)
+  -g   The location in aws ssm parameter store of the github token to use (Optional)
+  -c   The name of the cloudwatch group to store logs in. Required for running documents, defaults to aws-connect
   -v   Display version
   ```
 
@@ -55,3 +59,17 @@ The SSH tunnel can then be used for things like connecting to an RDS database th
 
 `aws-connect -s -t CLUSTER=prod`
 
+5. Run SSM Document named shell-script on instance-id i-23323ere3423 in region us-east-1 with default profile and arguments 'param1 param 2'. The cloudwatch log name has been changed to ssm-cloudwatch-logs. Document is required, A github token is required if the SSM document is referencing content in a private github repo. See this [AWS blog post](https://aws.amazon.com/blogs/mt/run-scripts-stored-in-private-or-public-github-repositories-using-amazon-ec2-systems-manager/) on documents referencing private repos: 
+
+`aws-connect -x i-23323ere3423 -r us-east-1 -a document -d shell-script -p default -w 'param1 "param 2"' -g /devops/github_token -c ssm-cloudwatch-logs` 
+
+6. Run SSM Document named shell-script on instance-id i-23323ere3423 in region us-east-1 with staging profile and no arguments on a public repo. The cloudwatch log name has been changed to ssm-cloudwatch-logs. Document is required but since the repo is public no github token is required: 
+
+`aws-connect -x i-23323ere3423 -r us-east-1 -a document -d shell-script -p staging -c ssm-cloudwatch-logs` 
+
+## Sample Documents
+
+In this repo under the sample_documents folder there are 3 .yml files. These show samples of what an ssm document might look like for 3 different cases:
+- Running a script from a private github repo
+- Running a script from a public github repo
+- Running an ssm document
