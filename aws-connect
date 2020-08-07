@@ -226,38 +226,49 @@ elif [ "${action}" == "tunnel" ]; then
     --profile "${aws_profile}"
 elif [ "${action}" == "document" ]; then
 
-  if [ -z "${github_token_location}" ]
-  then
-    echo "No github token provided - scripts referenced in SSM document must be in a public repo if no token is provided"
-  else
-    arguments="githubTokenLocation='${github_token_location}',"
+  if [ -n "${github_token_location}" ]; then
+    arguments="githubTokenLocation='${github_token_location}'"
   fi
 
-  if [ -z "${document_parameters}" ]
-  then
-    arguments="${arguments::${#arguments}-1}"
-  else
-    arguments="${arguments}parameters='${document_parameters}'"
+  if [ -n "${document_parameters}" ]; then
+    if [ -n "${arguments}" ]; then
+      arguments="${arguments},parameters='${document_parameters}'"
+    else
+      arguments="parameters='${document_parameters}'"
+    fi
   fi
 
-  if [ -z "${cloudwatch_group}" ]
-  then
+  if [ -z "${cloudwatch_group}" ]; then
     cloudwatch_group="aws-connect"
   fi
 
-  echo "Running ${document_name} on instance ${instance_id}"
+  echo "Running ${document_name} on instance ${instance_id}"  
 
-  sh_command_id=$( aws ssm send-command \
-    --instance-ids ${instance_id} \
-    --document-name "${document_name}" \
-    --comment "Document run using aws-connect" \
-    --output text \
-    --parameters "${arguments}" \
-    --region ${aws_region} \
-    --profile ${aws_profile} \
-    --cloud-watch-output-config '{"CloudWatchLogGroupName":"'${cloudwatch_group}'","CloudWatchOutputEnabled":true}' \
-    --query "Command.CommandId")
+  # create the send-command as a string so that parameters can be appended on if needed
+  aws_command="aws ssm send-command \
+--instance-ids ${instance_id} \
+--document-name \"${document_name}\" \
+--comment \"Document run using aws-connect\" \
+--output text \
+--region ${aws_region} \
+--profile ${aws_profile} \
+--cloud-watch-output-config '{\"CloudWatchLogGroupName\":\"${cloudwatch_group}\",\"CloudWatchOutputEnabled\":true}' \
+--query \"Command.CommandId\""
 
+  if [ -n "${arguments}" ]; then
+    aws_command="${aws_command} --parameters ${arguments}"
+  fi
+
+  echo "Command to execute: ${aws_command}"
+
+  # execute the command
+  sh_command_id=$(eval $aws_command)
+
+  if [ "$?" != "0" ]; then
+    echo "Unable to execute command!"
+    exit 0
+  fi
+  # get the status of the command
   status=$(aws ssm list-command-invocations \
     --command-id "${sh_command_id}" \
     --details \
@@ -267,26 +278,64 @@ elif [ "${action}" == "document" ]; then
 
   echo "Command ID: $sh_command_id"
 
-  # wait for the command to finish running before getting the output
-  while [ "$status" == "InProgress" ]
-  do
+  ssm_failed_statuses=("Cancelled"
+  "Failed"
+  "Delivery Timed Out"
+  "Execution Timed Out"
+  "Failed"
+  "Invalid Platform"
+  "Undeliverable"
+  "Terminated"
+  "Access Denied"
+  "InvalidParameters")
+
+  # while the command has not failed or succeeded check the status every 5 seconds
+  endLoop="false"
+  while [ "${endLoop}" == "false" ]; do
+
     echo "Command still running..."
     sleep 5
-
+    
     status=$(aws ssm list-command-invocations \
       --command-id "${sh_command_id}" \
       --details \
       --output text \
       --no-paginate \
       --query "CommandInvocations[0].Status")  
+
+    # check if the command has failed
+    for (( i = 0; i < "${#ssm_failed_statuses[@]}"; i++ )); do
+      if [ "${ssm_failed_statuses[$i]}" == "${status}" ]; then
+        echo "Failure Status: ${ssm_failed_statuses[$i]}!"
+        endLoop="true"
+      fi
+    done
+
+    # check if the command has succeeded. If so then get the command output
+    if [ "Success" == "${status}" ]; then
+
+      log_streams=$(aws logs describe-log-streams --log-group-name ${cloudwatch_group} --log-stream-name-prefix "${sh_command_id}/${instance_id}" --query "logStreams[*].logStreamName")
+
+      log_streams="${log_streams:1:${#log_streams}-2}"
+
+      for log in ${log_streams[@]}; do
+
+        log=${log%\",}
+        log=${log%\"}
+        log=${log#\"}
+
+        printf "$(aws logs get-log-events --log-group-name ${cloudwatch_group} --log-stream-name ${log} --query "events[0].message")\n\n"
+
+      done
+
+      echo "\n"
+      printf "Log output is limited to 1MB. For the full logs, visit https://console.aws.amazon.com/cloudwatch/home then \
+view the stream '${sh_command_id}/${instance_id}/' under the log group ${cloudwatch_group}"
+
+      endLoop="true"
+    fi
+
   done
-
-  if [ "$status" == "Failed" ]
-  then
-    echo "Command Failed!"
-  fi
-
-  printf "$(aws logs get-log-events --log-group-name ${cloudwatch_group} --log-stream-name ${sh_command_id}/${instance_id}/runShellScript/stdout --query "events[0].message")"
 
 else
   echo "Unknown action ${action} specified"
