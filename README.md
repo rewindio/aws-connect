@@ -67,7 +67,7 @@ The SSH tunnel can then be used for things like connecting to an RDS database th
 
 `aws-connect -x i-23323ere3423 -r us-east-1 -a document -d shell-script -p staging -c ssm-cloudwatch-logs` 
 
-## Sample Document
+## Sample Documents
 
 In this repo under the sample_documents folder there are 3 .yml files. These show samples of what an ssm document might look like for 3 different cases:
 - Running a script from a private github repo
