@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [1.0.12]
+
+- Added addition feature to be able to run ssm documents on an instance
+
 ## [1.0.11]
 
 - @JonaC22 check for session manager plugin in additional location
