@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [1.0.13]
+
+- Added sha256 auto generation to version releases
+
 ## [1.0.12]
 
 - Added addition feature to be able to run ssm documents on an instance
