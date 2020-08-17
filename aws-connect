@@ -282,7 +282,6 @@ elif [ "${action}" == "document" ]; then
   "Failed"
   "DeliveryTimedOut"
   "ExecutionTimedOut"
-  "Failed"
   "InvalidPlatform"
   "Undeliverable"
   "Terminated"
