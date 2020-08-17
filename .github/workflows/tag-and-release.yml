@@ -49,6 +49,6 @@ jobs:
       uses: ncipollo/release-action@v1
       with:
         tag: ${{steps.get_version.outputs.version_tag}}
-        artifacts: "*.gem, CHANGELOG.md"
+        artifacts: "*.gem, CHANGELOG.md, sha256.sum, aws-connect*.tar.gz"
         bodyFile: "REL-BODY.md"
         token: ${{ secrets.GITHUB_TOKEN }}
