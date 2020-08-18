@@ -3,7 +3,7 @@
 # Wrapper around AWS session manager for instance access and SSH tunnels
 
 programname=$0
-version=1.0.12
+version=1.0.13
 
 # Defaults
 action=ssh
@@ -19,13 +19,14 @@ version() {
 usage() {
   echo "Usage:"
   echo ""
-  echo "$programname [-a ssh|tunnel|document] [-d <document name>] [-c <document parameters>] [-g <github access token location>] [-n <instance name>|-t <instance tag>] [-r <region>] [-p <profile name>] [-o <port>] [-x <instance id>] [-s] [-h] [-v]"
+  echo "$programname [-a ssh|tunnel|document] [-d <document name>] [-c <document parameters>] [-g <github access token location>] [-n <instance name>|-t <instance tag>] [-r <region>] [-p <profile name>] [-o <port>] [-x <instance id>] [-l] [-s] [-h] [-v]"
   echo ""
   echo "  -a   Connect interactive session (ssh), establish tunnel (tunnel), or run an ssm document (document) on an instance (default: ssh)"
   echo "  -d   Specify the name of the ssm document to run. Only needed if running ssm document action."
   echo "  -w   Values for the ssm document arguments (Optional)"
   echo "  -g   The location in aws ssm parameter store of the github token to use (Optional)"
   echo "  -c   The name of the cloudwatch group to store logs in. Required for running documents, defaults to aws-connect"
+  echo "  -l   Flag if the command is going to be long running(8hrs +)"
   echo "  -n   Value for the Name tag of an EC2 instance"
   echo "  -t   Specify a tag instead of a name. The tag can be 'key' or 'key=value'"
   echo "  -r   AWS region (default: us-east-1)"
@@ -67,7 +68,7 @@ get_instances_by_tag() {
 }
 
 # get the options and set flags
-while getopts "a:d:c:g:w:n:t:r:p:o:x:shv" OPTION; do
+while getopts "a:d:c:g:w:n:t:r:p:o:x:shvl" OPTION; do
   case $OPTION in
   v)
     version
@@ -116,6 +117,9 @@ while getopts "a:d:c:g:w:n:t:r:p:o:x:shv" OPTION; do
     ;;      
   c)
     cloudwatch_group=$OPTARG
+    ;;
+  l)
+    long_running="true"
     ;;
   *)
     echo "Incorrect options provided"
@@ -181,8 +185,7 @@ if [ -z "${instance_id}" ]; then
       echo "Select an instance to connect to"
 
       inst_num=1
-      for instance in ${arr_instance_ids[@]}
-      do
+      for instance in "${arr_instance_ids[@]}"; do
         echo "${inst_num}) ${arr_instance_ids[inst_num]} (${arr_instance_names[inst_num]})"
         inst_num=$(( inst_num + 1 ))
       done
@@ -227,7 +230,7 @@ elif [ "${action}" == "tunnel" ]; then
 elif [ "${action}" == "document" ]; then
 
   if [ -n "${github_token_location}" ]; then
-    arguments="githubTokenLocation='${github_token_location}'"
+    arguments="githubTokenLocation=\"${github_token_location}\""
   fi
 
   if [ -n "${document_parameters}" ]; then
@@ -235,6 +238,14 @@ elif [ "${action}" == "document" ]; then
       arguments="${arguments},parameters='${document_parameters}'"
     else
       arguments="parameters='${document_parameters}'"
+    fi
+  fi
+
+  if [ -n "${long_running}" ]; then
+    if [ -n "${arguments}" ]; then
+      arguments="${arguments},longRunning='${long_running}'"
+    else
+      arguments="longRunning='${long_running}'"
     fi
   fi
 
@@ -256,7 +267,9 @@ elif [ "${action}" == "document" ]; then
     --query \"Command.CommandId\""
 
   if [ -n "${arguments}" ]; then
-    aws_command="${aws_command} --parameters ${arguments}"
+    arguments=$( echo "${arguments}" | sed 's/ /\\ /g' )
+    arguments=$( echo "${arguments}" | tr "," "\," )
+    aws_command="${aws_command} --parameters '${arguments}'"
   fi
 
   # execute the command
@@ -279,14 +292,15 @@ elif [ "${action}" == "document" ]; then
 
   ssm_failed_statuses=("Cancelled"
   "Failed"
-  "Delivery Timed Out"
-  "Execution Timed Out"
-  "Failed"
-  "Invalid Platform"
+  "DeliveryTimedOut"
+  "ExecutionTimedOut"
+  "InvalidPlatform"
   "Undeliverable"
   "Terminated"
-  "Access Denied"
-  "InvalidParameters")
+  "AccessDenied"
+  "InvalidParameters"
+  "TimedOut"
+  "")
 
   # while the command has not failed or succeeded check the status every 5 seconds
   endLoop="false"
@@ -317,7 +331,7 @@ elif [ "${action}" == "document" ]; then
 
       for log in ${log_streams[@]}; do
 
-        echo $(aws logs get-log-events --log-group-name ${cloudwatch_group} --log-stream-name ${log} --query "events[0].message")
+        aws logs get-log-events --log-group-name "${cloudwatch_group}" --log-stream-name "${log}" --query "events[0].message"
         printf "\n\n"
 
       done

@@ -7,7 +7,7 @@ Wrapper script around AWS session manager to establish remote shell connections 
 ```bash
 Usage:
 
-/usr/local/bin/aws-connect [-a ssh|tunnel|document] [-d <document name>] [-c <document parameters>] [-g <github access token location>] [-n <instance name>|-t <instance tag>] [-r <region>] [-p <profile name>] [-o <port>] [-x <instance id>] [-s] [-h] [-v]
+/usr/local/bin/aws-connect [-a ssh|tunnel|document] [-d <document name>] [-c <document parameters>] [-g <github access token location>] [-n <instance name>|-t <instance tag>] [-r <region>] [-p <profile name>] [-o <port>] [-x <instance id>] [-l] [-s] [-h] [-v]
 
   -a   Connect interactive session (ssh), establish tunnel (tunnel), or run an ssm document (document) on an instance (default: ssh)
   -n   Value for the Name tag of an EC2 instance
@@ -22,6 +22,7 @@ Usage:
   -w   Values for the ssm document arguments (Optional)
   -g   The location in aws ssm parameter store of the github token to use (Optional)
   -c   The name of the cloudwatch group to store logs in. Required for running documents, defaults to aws-connect
+  -l   Flag if the command is going to be long running(8hrs +)
   -v   Display version
   ```
 
@@ -66,6 +67,11 @@ The SSH tunnel can then be used for things like connecting to an RDS database th
 6. Run SSM Document named shell-script on instance-id i-23323ere3423 in region us-east-1 with staging profile and no arguments on a public repo. The cloudwatch log name has been changed to ssm-cloudwatch-logs. Document is required but since the repo is public no github token is required: 
 
 `aws-connect -x i-23323ere3423 -r us-east-1 -a document -d shell-script -p staging -c ssm-cloudwatch-logs` 
+
+
+7. Run SSM Document named shell-script on instance-id i-23323ere3423 in region us-east-1 with staging profile and no arguments on a public repo. The cloudwatch log name has been changed to ssm-cloudwatch-logs. It is also going to be a long running command so it will need the -l flag. Document is required but since the repo is public no github token is required: 
+
+`aws-connect -x i-23323ere3423 -r us-east-1 -a document -d shell-script -p staging -c ssm-cloudwatch-logs -l` 
 
 ## Sample Documents
 
