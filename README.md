@@ -71,7 +71,7 @@ The SSH tunnel can then be used for things like connecting to an RDS database th
 
 7. Run SSM Document named shell-script on instance-id i-23323ere3423 in region us-east-1 with staging profile and no arguments on a public repo. The cloudwatch log name has been changed to ssm-cloudwatch-logs. It is also going to be a long running command so it will need the -l flag. Document is required but since the repo is public no github token is required: 
 
-`aws-connect -x i-23323ere3423 -r us-east-1 -a document -d shell-script -p staging -c ssm-cloudwatch-logs -l true` 
+`aws-connect -x i-23323ere3423 -r us-east-1 -a document -d shell-script -p staging -c ssm-cloudwatch-logs -l` 
 
 ## Sample Documents
 

@@ -19,7 +19,7 @@ version() {
 usage() {
   echo "Usage:"
   echo ""
-  echo "$programname [-a ssh|tunnel|document] [-d <document name>] [-c <document parameters>] [-g <github access token location>] [-n <instance name>|-t <instance tag>] [-r <region>] [-p <profile name>] [-o <port>] [-x <instance id>] [-s] [-h] [-v]"
+  echo "$programname [-a ssh|tunnel|document] [-d <document name>] [-c <document parameters>] [-g <github access token location>] [-l <long running>] [-n <instance name>|-t <instance tag>] [-r <region>] [-p <profile name>] [-o <port>] [-x <instance id>] [-s] [-h] [-v]"
   echo ""
   echo "  -a   Connect interactive session (ssh), establish tunnel (tunnel), or run an ssm document (document) on an instance (default: ssh)"
   echo "  -d   Specify the name of the ssm document to run. Only needed if running ssm document action."
@@ -68,7 +68,7 @@ get_instances_by_tag() {
 }
 
 # get the options and set flags
-while getopts "a:d:c:l:g:w:n:t:r:p:o:x:shv" OPTION; do
+while getopts "a:d:c:g:w:n:t:r:p:o:x:shvl" OPTION; do
   case $OPTION in
   v)
     version
@@ -119,7 +119,7 @@ while getopts "a:d:c:l:g:w:n:t:r:p:o:x:shv" OPTION; do
     cloudwatch_group=$OPTARG
     ;;
   l)
-    long_running=$OPTARG
+    long_running="true"
     ;;
   *)
     echo "Incorrect options provided"
