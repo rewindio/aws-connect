@@ -2,7 +2,8 @@
 
 ## [1.0.13]
 
-- Added sha256 auto generation to version releases
+- Added sha256 auto generation to version releases. 
+- Added the ability to specify if the command is long running
 
 ## [1.0.12]
 

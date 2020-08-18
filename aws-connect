@@ -26,6 +26,7 @@ usage() {
   echo "  -w   Values for the ssm document arguments (Optional)"
   echo "  -g   The location in aws ssm parameter store of the github token to use (Optional)"
   echo "  -c   The name of the cloudwatch group to store logs in. Required for running documents, defaults to aws-connect"
+  echo "  -l   Specify if the command is going to be long running(8hrs +). Default: false"
   echo "  -n   Value for the Name tag of an EC2 instance"
   echo "  -t   Specify a tag instead of a name. The tag can be 'key' or 'key=value'"
   echo "  -r   AWS region (default: us-east-1)"
@@ -67,7 +68,7 @@ get_instances_by_tag() {
 }
 
 # get the options and set flags
-while getopts "a:d:c:g:w:n:t:r:p:o:x:shv" OPTION; do
+while getopts "a:d:c:l:g:w:n:t:r:p:o:x:shv" OPTION; do
   case $OPTION in
   v)
     version
@@ -116,6 +117,9 @@ while getopts "a:d:c:g:w:n:t:r:p:o:x:shv" OPTION; do
     ;;      
   c)
     cloudwatch_group=$OPTARG
+    ;;
+  l)
+    long_running=$OPTARG
     ;;
   *)
     echo "Incorrect options provided"
@@ -234,6 +238,14 @@ elif [ "${action}" == "document" ]; then
       arguments="${arguments},parameters='${document_parameters}'"
     else
       arguments="parameters='${document_parameters}'"
+    fi
+  fi
+
+  if [ -n "${long_running}" ]; then
+    if [ -n "${arguments}" ]; then
+      arguments="${arguments},longRunning='${long_running}'"
+    else
+      arguments="longRunning='${long_running}'"
     fi
   fi
 
