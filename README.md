@@ -7,7 +7,7 @@ Wrapper script around AWS session manager to establish remote shell connections 
 ```bash
 Usage:
 
-/usr/local/bin/aws-connect [-a ssh|tunnel|document] [-d <document name>] [-c <document parameters>] [-g <github access token location>] [-n <instance name>|-t <instance tag>] [-r <region>] [-p <profile name>] [-o <port>] [-x <instance id>] [-s] [-h] [-v]
+/usr/local/bin/aws-connect [-a ssh|tunnel|document] [-d <document name>] [-c <document parameters>] [-g <github access token location>] [-n <instance name>|-t <instance tag>] [-r <region>] [-p <profile name>] [-o <port>] [-x <instance id>] [-l] [-s] [-h] [-v]
 
   -a   Connect interactive session (ssh), establish tunnel (tunnel), or run an ssm document (document) on an instance (default: ssh)
   -n   Value for the Name tag of an EC2 instance
@@ -22,7 +22,7 @@ Usage:
   -w   Values for the ssm document arguments (Optional)
   -g   The location in aws ssm parameter store of the github token to use (Optional)
   -c   The name of the cloudwatch group to store logs in. Required for running documents, defaults to aws-connect
-  -l   Specify if the command is going to be long running(8hrs +). Default: false
+  -l   Flag if the command is going to be long running(8hrs +)
   -v   Display version
   ```
 
