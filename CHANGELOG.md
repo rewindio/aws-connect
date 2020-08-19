@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [1.0.14]
+
+- Hotfixed a default profile bug
+
 ## [1.0.13]
 
 - Added sha256 auto generation to version releases. 
