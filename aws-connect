@@ -261,8 +261,8 @@ elif [ "${action}" == "document" ]; then
     --document-name \"${document_name}\" \
     --comment \"Document run using aws-connect\" \
     --output text \
-    --region ${aws_region} \
-    --profile ${aws_profile} \
+    --region \"${aws_region}\" \
+    --profile \"${aws_profile}\" \
     --cloud-watch-output-config '{\"CloudWatchLogGroupName\":\"${cloudwatch_group}\",\"CloudWatchOutputEnabled\":true}' \
     --query \"Command.CommandId\""
 
@@ -337,7 +337,7 @@ elif [ "${action}" == "document" ]; then
       done
 
       printf "Log output is limited to 1MB. For the full logs, visit: "
-      printf 'https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#logsV2:log-groups/log-group/%s/$3FlogStreamNameFilter=%s/%s' "${cloudwatch_group}" "${sh_command_id}" "${instance_id}"
+      printf 'https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#logsV2:log-groups/log-group/%s/$3FlogStreamNameFilter=%s/%s \n' "${cloudwatch_group}" "${sh_command_id}" "${instance_id}"
 
       endLoop="true"
     fi
