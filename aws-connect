@@ -218,12 +218,12 @@ if [ "${action}" == "ssh" ]; then
   if [ -n "${document_name}" ]; then
     aws ssm start-session \
       --target "${instance_id}" \
+      --document-name "${document_name}" \
       --region "${aws_region}" \
       --profile "${aws_profile}"
   else
     aws ssm start-session \
       --target "${instance_id}" \
-      --document-name "${document_name}" \
       --region "${aws_region}" \
       --profile "${aws_profile}"
   fi
