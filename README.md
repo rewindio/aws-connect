@@ -18,7 +18,7 @@ Usage:
   -x   override Name tag and connect direct to given instance ID
   -s   Pick a specific instance ID
   -h   Display this help
-  -d   Specify the name of the ssm document to run. Only needed if running ssm document action.
+  -d   Specify the name of the ssm document to run.
   -w   Values for the ssm document arguments (Optional)
   -g   The location in aws ssm parameter store of the github token to use (Optional)
   -c   The name of the cloudwatch group to store logs in. Required for running documents, defaults to aws-connect

@@ -215,10 +215,18 @@ fi
   # SSH, tunnel, or document
 if [ "${action}" == "ssh" ]; then
   echo "Establishing session manager connection to ${instance_name} (${instance_id})"
-  aws ssm start-session \
-    --target "${instance_id}" \
-    --region "${aws_region}" \
-    --profile "${aws_profile}"
+  if [ -z "${document_name}" ]; then
+    aws ssm start-session \
+      --target "${instance_id}" \
+      --region "${aws_region}" \
+      --profile "${aws_profile}"
+  else
+    aws ssm start-session \
+      --target "${instance_id}" \
+      --document-name "${document_name}" \
+      --region "${aws_region}" \
+      --profile "${aws_profile}"
+  fi
 elif [ "${action}" == "tunnel" ]; then
   echo "Creating SSH tunnel to ${tag_value} (${instance_id})"
   aws ssm start-session \
