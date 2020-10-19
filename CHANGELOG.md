@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [1.0.15]
+
+- @jValdron Allow passing a document to all sessions
+
 ## [1.0.14]
 
 - Hotfixed a default profile bug
