@@ -7,7 +7,7 @@ version=1.0.15
 
 # Defaults
 action=ssh
-aws_region=us-east-1
+default_aws_region=us-east-1
 aws_profile=''
 port=9999
 interactive_mode=0
@@ -159,6 +159,21 @@ fi
 if [ -z "${tag_value}" ] && [ -z "${instance_id}" ]; then
   usage
   exit 1
+fi
+
+# If no region parameter passed then try to find one otherwise we default
+if [ -z "${aws_region:+x}" ]; then
+  if [ -n "${aws_profile}" ]; then
+    aws_region=$(aws --profile "${aws_profile}" configure get region)
+  fi
+
+  if [ -z "${aws_region:+x}" ]; then
+    aws_region="${AWS_REGION}"
+  fi
+
+  if [ -z "${aws_region:+x}" ]; then
+    aws_region="${default_aws_region}"
+  fi
 fi
 
 # If instance ID is set via -x, use it
