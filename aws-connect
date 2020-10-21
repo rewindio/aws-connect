@@ -9,7 +9,8 @@ version=1.0.16
 action=ssh
 default_aws_region=us-east-1
 aws_profile=''
-port=9999
+default_tunnel_remote_port=22
+default_tunnel_local_port=9999
 interactive_mode=0
 
 version() {
@@ -31,7 +32,8 @@ usage() {
   echo "  -t   Specify a tag instead of a name. The tag can be 'key' or 'key=value'"
   echo "  -r   AWS region (default: us-east-1)"
   echo "  -p   AWS profile (default: none)"
-  echo "  -o   Local ssh tunnel port (only applicable in tunnel mode; default: 9999)"
+  echo "  -f   Remote tunnel port (only applicable in tunnel mode); Defaults to 22"
+  echo "  -o   Local tunnel port (only applicable in tunnel mode; default: 9999)"
   echo "  -x   override Name tag and connect direct to given instance ID"
   echo "  -s   Pick a specific instance ID"
   echo "  -h   Display this help"
@@ -68,7 +70,7 @@ get_instances_by_tag() {
 }
 
 # get the options and set flags
-while getopts "a:d:c:g:w:n:t:r:p:o:x:shvl" OPTION; do
+while getopts "a:d:c:f:g:w:n:t:r:p:o:x:shvl" OPTION; do
   case $OPTION in
   v)
     version
@@ -97,8 +99,8 @@ while getopts "a:d:c:g:w:n:t:r:p:o:x:shvl" OPTION; do
     instance_id=$OPTARG
     ;;
   o)
-    port=$OPTARG
-    if [ "${port}" -le 1024 ]; then
+    tunnel_local_port=$OPTARG
+    if [ "${tunnel_local_port}" -le 1024 ]; then
       echo "Port must be greater than 1024"
       exit 1
     fi
@@ -120,6 +122,9 @@ while getopts "a:d:c:g:w:n:t:r:p:o:x:shvl" OPTION; do
     ;;
   l)
     long_running="true"
+    ;;
+  f)
+    tunnel_remote_port=$OPTARG
     ;;
   *)
     echo "Incorrect options provided"
@@ -243,11 +248,11 @@ if [ "${action}" == "ssh" ]; then
       --profile "${aws_profile}"
   fi
 elif [ "${action}" == "tunnel" ]; then
-  echo "Creating SSH tunnel to ${tag_value} (${instance_id})"
+  echo "Creating tunnel to ${tag_value} (${instance_id})"
   aws ssm start-session \
     --target "${instance_id}" \
     --document-name AWS-StartPortForwardingSession \
-    --parameters "{\"portNumber\":[\"22\"],\"localPortNumber\":[\"${port}\"]}" \
+    --parameters "{\"portNumber\":[\"${tunnel_remote_port:-$default_tunnel_remote_port}\"],\"localPortNumber\":[\"${tunnel_local_port:-$default_tunnel_local_port}\"]}" \
     --region "${aws_region}" \
     --profile "${aws_profile}"
 elif [ "${action}" == "document" ]; then
