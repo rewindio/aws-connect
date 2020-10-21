@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [1.0.16]
+
+- @Lugoues Better handling of regions and reading of AWS_REGION env var
+
 ## [1.0.15]
 
 - @jValdron Allow passing a document to all sessions
