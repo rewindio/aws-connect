@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [1.0.17]
+
+- @Lugoues support tunnels other than ssh (via use of `-f` flag) 
+
 ## [1.0.16]
 
 - @Lugoues Better handling of regions and reading of AWS_REGION env var
