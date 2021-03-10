@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [1.0.18]
+
+- @davegallant Let the shell find bash for better portability
+
 ## [1.0.17]
 
 - @Lugoues support tunnels other than ssh (via use of `-f` flag) 
