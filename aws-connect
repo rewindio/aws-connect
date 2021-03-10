@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Wrapper around AWS session manager for instance access and SSH tunnels
 
