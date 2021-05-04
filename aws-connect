@@ -116,7 +116,7 @@ while getopts "a:d:c:f:g:w:n:t:r:p:o:x:shvl" OPTION; do
     ;;
   g)
     github_token_location=$OPTARG
-    ;;      
+    ;;
   c)
     cloudwatch_group=$OPTARG
     ;;
@@ -281,7 +281,7 @@ elif [ "${action}" == "document" ]; then
     cloudwatch_group="aws-connect"
   fi
 
-  echo "Running ${document_name} on instance ${instance_id}"  
+  echo "Running ${document_name} on instance ${instance_id}"
 
   # create the send-command as a string so that parameters can be appended on if needed
   aws_command="aws ssm send-command \
@@ -305,11 +305,11 @@ elif [ "${action}" == "document" ]; then
 
   if [ "$?" != "0" ]; then
     echo "Unable to execute command!"
-    exit 0
+    exit 1
   fi
 
   echo "Command ID: $sh_command_id"
-  
+
   # get the status of the command
   status=$(aws ssm list-command-invocations \
     --command-id "${sh_command_id}" \
@@ -336,21 +336,13 @@ elif [ "${action}" == "document" ]; then
 
     echo "Command still running..."
     sleep 5
-    
+
     status=$(aws ssm list-command-invocations \
       --command-id "${sh_command_id}" \
       --details \
       --output text \
       --no-paginate \
-      --query "CommandInvocations[0].Status")  
-
-    # check if the command has failed
-    for (( i = 0; i < "${#ssm_failed_statuses[@]}"; i++ )); do
-      if [ "${ssm_failed_statuses[$i]}" == "${status}" ]; then
-        echo "Failure Status: ${ssm_failed_statuses[$i]}!"
-        endLoop="true"
-      fi
-    done
+      --query "CommandInvocations[0].Status")
 
     # check if the command has succeeded. If so then get the command output
     if [ "Success" == "${status}" ]; then
@@ -369,6 +361,15 @@ elif [ "${action}" == "document" ]; then
 
       endLoop="true"
     fi
+
+    # check if the command has failed
+    for (( i = 0; i < "${#ssm_failed_statuses[@]}"; i++ )); do
+      if [ "${ssm_failed_statuses[$i]}" == "${status}" ]; then
+        echo "Failure Status: ${ssm_failed_statuses[$i]}!"
+        endLoop="true"
+        exit 1
+      fi
+    done
 
   done
 
