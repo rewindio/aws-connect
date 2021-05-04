@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [1.0.19]
+
+- @meirshal Exit with an error if the SSM command does not complete successfully
+
 ## [1.0.18]
 
 - @davegallant Let the shell find bash for better portability
