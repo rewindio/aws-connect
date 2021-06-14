@@ -3,7 +3,7 @@
 # Wrapper around AWS session manager for instance access and SSH tunnels
 
 programname=$0
-version=1.0.19
+version=1.0.20
 
 # Defaults
 action=ssh
