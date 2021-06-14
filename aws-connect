@@ -173,6 +173,10 @@ if [ -z "${aws_region:+x}" ]; then
   fi
 
   if [ -z "${aws_region:+x}" ]; then
+    aws_region=$(aws configure get region)
+  fi
+
+  if [ -z "${aws_region:+x}" ]; then
     aws_region="${AWS_REGION}"
   fi
 
