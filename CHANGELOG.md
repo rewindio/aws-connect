@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [1.0.20]
+
+- @adam-prickett Use the default region if no region configured for a profile
+
 ## [1.0.19]
 
 - @meirshal Exit with an error if the SSM command does not complete successfully
