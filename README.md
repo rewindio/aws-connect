@@ -7,7 +7,7 @@ Choose one of the following options:
 
 * Install using bpkg:
   1. Install bpkg: ```curl -Lo- "https://raw.githubusercontent.com/bpkg/bpkg/master/setup.sh" | bash```
-  2. sudo bpkg install meirshal/aws-connect
+  2. sudo bpkg install rewindio/aws-connect
 
 * Download the release tarball [here](https://github.com/rewindio/aws-connect/releases/latest).
 
