@@ -2,10 +2,10 @@
 
 Wrapper script around AWS session manager to establish remote shell connections or SSH tunnels
 
-## Install
+## Installation
 Choose one of the following options:
 
-* Install using bpkg:
+* Install using [bpkg](https://github.com/bpkg/bpkg):
   1. Install bpkg: ```curl -Lo- "https://raw.githubusercontent.com/bpkg/bpkg/master/setup.sh" | bash```
   2. sudo bpkg install rewindio/aws-connect
 
