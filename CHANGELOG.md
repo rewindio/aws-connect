@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [1.0.21]
+
+- @meirshal Add bpkg support
+
 ## [1.0.20]
 
 - @adam-prickett Use the default region if no region configured for a profile
