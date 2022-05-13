@@ -3,7 +3,7 @@
 # Wrapper around AWS session manager for instance access and SSH tunnels
 
 programname=$0
-version=1.0.21
+version=1.0.22
 
 # Defaults
 action=ssh
@@ -319,6 +319,8 @@ elif [ "${action}" == "document" ]; then
     --command-id "${sh_command_id}" \
     --details \
     --output text \
+    --region "${aws_region}" \
+    --profile "${aws_profile}" \
     --no-paginate \
     --query "CommandInvocations[0].Status")
 
@@ -345,6 +347,8 @@ elif [ "${action}" == "document" ]; then
       --command-id "${sh_command_id}" \
       --details \
       --output text \
+      --region "${aws_region}" \
+      --profile "${aws_profile}" \
       --no-paginate \
       --query "CommandInvocations[0].Status")
 
