@@ -3,7 +3,7 @@
 # Wrapper around AWS session manager for instance access and SSH tunnels
 
 programname=$0
-version=1.0.22
+version=1.0.23
 
 # Defaults
 action=ssh
@@ -11,6 +11,7 @@ default_aws_region=us-east-1
 aws_profile=''
 default_tunnel_remote_port=22
 default_tunnel_local_port=9999
+default_tunnel_remote_host=localhost
 interactive_mode=0
 
 version() {
@@ -20,9 +21,10 @@ version() {
 usage() {
   echo "Usage:"
   echo ""
-  echo "$programname [-a ssh|tunnel|document] [-d <document name>] [-c <document parameters>] [-g <github access token location>] [-n <instance name>|-t <instance tag>] [-r <region>] [-p <profile name>] [-o <port>] [-x <instance id>] [-l] [-s] [-h] [-v]"
+  echo "$programname [-a ssh|tunnel|document] [-i <remote host name>] [-d <document name>] [-c <document parameters>] [-g <github access token location>] [-n <instance name>|-t <instance tag>] [-r <region>] [-p <profile name>] [-o <port>] [-x <instance id>] [-l] [-s] [-h] [-v]"
   echo ""
   echo "  -a   Connect interactive session (ssh), establish tunnel (tunnel), or run an ssm document (document) on an instance (default: ssh)"
+  echo "  -i   Specify the name of the remote host name to tunnel to. Only needed if running ssm tunnel action (default: localhost)"
   echo "  -d   Specify the name of the ssm document to run. Only needed if running ssm document action."
   echo "  -w   Values for the ssm document arguments (Optional)"
   echo "  -g   The location in aws ssm parameter store of the github token to use (Optional)"
@@ -70,7 +72,7 @@ get_instances_by_tag() {
 }
 
 # get the options and set flags
-while getopts "a:d:c:f:g:w:n:t:r:p:o:x:shvl" OPTION; do
+while getopts "a:d:c:f:g:i:w:n:t:r:p:o:x:shvl" OPTION; do
   case $OPTION in
   v)
     version
@@ -125,6 +127,9 @@ while getopts "a:d:c:f:g:w:n:t:r:p:o:x:shvl" OPTION; do
     ;;
   f)
     tunnel_remote_port=$OPTARG
+    ;;
+  i)
+    tunnel_remote_host=$OPTARG
     ;;
   *)
     echo "Incorrect options provided"
@@ -252,11 +257,11 @@ if [ "${action}" == "ssh" ]; then
       --profile "${aws_profile}"
   fi
 elif [ "${action}" == "tunnel" ]; then
-  echo "Creating tunnel to ${tag_value} (${instance_id})"
+  echo "Creating tunnel to ${tunnel_remote_host} (${instance_id})"
   aws ssm start-session \
     --target "${instance_id}" \
-    --document-name AWS-StartPortForwardingSession \
-    --parameters "{\"portNumber\":[\"${tunnel_remote_port:-$default_tunnel_remote_port}\"],\"localPortNumber\":[\"${tunnel_local_port:-$default_tunnel_local_port}\"]}" \
+    --document-name AWS-StartPortForwardingSessionToRemoteHost \
+    --parameters "{\"portNumber\":[\"${tunnel_remote_port:-$default_tunnel_remote_port}\"],\"localPortNumber\":[\"${tunnel_local_port:-$default_tunnel_local_port}\"],\"host\":[\"${tunnel_remote_host:-$default_tunnel_remote_host}\"]}" \
     --region "${aws_region}" \
     --profile "${aws_profile}"
 elif [ "${action}" == "document" ]; then

@@ -40,6 +40,7 @@ Usage:
 * AWS CLI version 1.16.299 or higher
 * AWS session manager plugin ([see the install documentation](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html))
   * NOTE: Do not install the session manager plugin from brew as it does not grant gatekeeper access on the Mac
+  * NOTE: SSM Agent version 3.1.1374.0 or later on the managed instances that you are establishing a port forwarding session with is required. Follow this [documentation](https://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-manual-agent-install.html) or leverage SSM Fleet Manager to upgrade the SSM Agent
 
 ## Sample Commands
 
