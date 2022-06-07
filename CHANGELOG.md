@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [1.0.23]
+
+- @phamtriduy Support remote tunnel host with AWS-StartPortForwardingSessionToRemoteHost document  (via use of `-i` flag)
+
 ## [1.0.21]
 
 - @meirshal Add bpkg support
