@@ -17,8 +17,8 @@ jobs:
       id: get_version
       run: |
         version=$(grep "^version=" aws-connect |cut -f2 -d"=")
-        echo ::set-output name=version::$version
-        echo ::set-output name=version_tag::v$version
+        echo version=$version >> $GITHUB_OUTPUT
+        echo version_tag=v$version >> $GITHUB_OUTPUT
 
     - name: Tag commit
       uses: tvdias/github-tagger@v0.0.1
