@@ -2,7 +2,7 @@ name: tag-and-release
 
 on:
   push:
-    branches: 
+    branches:
       - main
     paths: 'aws-connect'
 
@@ -21,7 +21,7 @@ jobs:
         echo version_tag=v$version >> $GITHUB_OUTPUT
 
     - name: Tag commit
-      uses: tvdias/github-tagger@v0.0.1
+      uses: tvdias/github-tagger@ed7350546e3e503b5e942dffd65bc8751a95e49d
       with:
         repo-token: "${{ secrets.GITHUB_TOKEN }}"
         tag: "${{steps.get_version.outputs.version_tag}}"
@@ -31,12 +31,12 @@ jobs:
       run: |
         # Must use a temporary file or it loses the formatting
         VERSION=${{steps.get_version.outputs.version}}; awk "/## \[$VERSION\]/{flag=1;next}/## \[/{flag=0}flag" CHANGELOG.md > REL-BODY.md
-        
+
     - name: Create Relase TAR
       id: create_tar
       run: |
         tar cvzf ./aws-connect-${{steps.get_version.outputs.version}}.tar.gz aws-connect* README.md
-  
+
     - name: Generate Checksum
       id: generate_checksum
       run: |
@@ -45,7 +45,7 @@ jobs:
         echo "SHA256: ${checksum}" >> REL-BODY.md
 
     - name: Create Release
-      uses: ncipollo/release-action@v1
+      uses: ncipollo/release-action@a2e71bdd4e7dab70ca26a852f29600c98b33153e
       with:
         tag: ${{steps.get_version.outputs.version_tag}}
         artifacts: "*.gem, CHANGELOG.md, sha256.sum, aws-connect*.tar.gz"
