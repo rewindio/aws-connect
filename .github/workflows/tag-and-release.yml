@@ -21,7 +21,7 @@ jobs:
         echo version_tag=v$version >> $GITHUB_OUTPUT
 
     - name: Tag commit
-      uses: tvdias/github-tagger@ed7350546e3e503b5e942dffd65bc8751a95e49d
+      uses: tvdias/github-tagger@ed7350546e3e503b5e942dffd65bc8751a95e49d # v0.0.2
       with:
         repo-token: "${{ secrets.GITHUB_TOKEN }}"
         tag: "${{steps.get_version.outputs.version_tag}}"
@@ -45,7 +45,7 @@ jobs:
         echo "SHA256: ${checksum}" >> REL-BODY.md
 
     - name: Create Release
-      uses: ncipollo/release-action@a2e71bdd4e7dab70ca26a852f29600c98b33153e
+      uses: ncipollo/release-action@6c75be85e571768fa31b40abf38de58ba0397db5 # v1.13.0
       with:
         tag: ${{steps.get_version.outputs.version_tag}}
         artifacts: "*.gem, CHANGELOG.md, sha256.sum, aws-connect*.tar.gz"
