@@ -1,6 +1,6 @@
 {
   "name": "aws-connect",
-  "version": "0.0.1",
+  "version": "1.0.24",
   "description": "Wrapper script around AWS session manager to establish remote shell connections or SSH tunnels",
   "scripts": ["aws-connect"],
   "global": "true",
