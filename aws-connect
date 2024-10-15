@@ -21,7 +21,7 @@ version() {
 usage() {
   echo "Usage:"
   echo ""
-  echo "$programname [-a ssh|tunnel|document] [-i <remote host name>] [-d <document name>] [-c <document parameters>] [-g <github access token location>] [-n <instance name>|-t <instance tag>] [-r <region>] [-p <profile name>] [-o <port>] [-x <instance id>] [-l] [-s] [-h] [-v]"
+  echo "$programname [-a ssh|tunnel|document] [-i <remote host name>] [-d <document name>] [-c <document parameters>] [-g <github access token location>] [-n <instance name>|-t <instance tag>|-m <ssm instance name>] [-r <region>] [-p <profile name>] [-o <port>] [-x <instance id>] [-l] [-s] [-h] [-v]"
   echo ""
   echo "  -a   Connect interactive session (ssh), establish tunnel (tunnel), or run an ssm document (document) on an instance (default: ssh)"
   echo "  -i   Specify the name of the remote host name to tunnel to. Only needed if running ssm tunnel action (default: localhost)"
@@ -32,6 +32,7 @@ usage() {
   echo "  -l   Flag if the command is going to be long running(8hrs +)"
   echo "  -n   Value for the Name tag of an EC2 instance"
   echo "  -t   Specify a tag instead of a name. The tag can be 'key' or 'key=value'"
+  echo "  -m   Specify the SSM instance name"
   echo "  -r   AWS region (default: us-east-1)"
   echo "  -p   AWS profile (default: none)"
   echo "  -f   Remote tunnel port (only applicable in tunnel mode); Defaults to 22"
@@ -71,8 +72,23 @@ get_instances_by_tag() {
   echo "${instance_ids_list}"
 }
 
+get_instance_by_ssm_name() {
+  name="${1// /}"
+  region=$2
+  profile=$3
+
+  instance_id=$(aws ssm describe-instance-information \
+    --filters "Key=tag:Name,Values=${name}" \
+    --query 'InstanceInformationList[*].{Instance:InstanceId,Name:Name}' \
+    --output json \
+    --region "${region}" \
+    --profile "${profile}" | jq -r '.[0].Instance')
+
+  echo "${instance_id}"
+}
+
 # get the options and set flags
-while getopts "a:d:c:f:g:i:w:n:t:r:p:o:x:shvl" OPTION; do
+while getopts "a:d:c:f:g:i:w:n:m:t:r:p:o:x:shvl" OPTION; do
   case $OPTION in
   v)
     version
@@ -96,6 +112,9 @@ while getopts "a:d:c:f:g:i:w:n:t:r:p:o:x:shvl" OPTION; do
     ;;
   t)
     tag_value=$OPTARG
+    ;;
+  m)
+    ssm_name=$OPTARG
     ;;
   x)
     instance_id=$OPTARG
@@ -166,7 +185,7 @@ if [ ! -e /usr/local/bin/session-manager-plugin ] && [ ! session-manager-plugin 
 fi
 
 # Check for mandatory args
-if [ -z "${tag_value}" ] && [ -z "${instance_id}" ]; then
+if [ -z "${tag_value}" ] && [ -z "${instance_id}" ] && [ -z "${ssm_name}" ]; then
   usage
   exit 1
 fi
@@ -190,11 +209,25 @@ if [ -z "${aws_region:+x}" ]; then
   fi
 fi
 
-# If instance ID is set via -x, use it
-# If both tag and instance ID are set, use instance id
-if [ -z "${instance_id}" ]; then
-  # Get the list of instances
+# Only one of instance ID or ssm instance name can be set
+if [ -n "${instance_id}" ] && [ -n "${ssm_name}" ]; then
+  echo "Cannot specify both instance ID and SSM instance name"
+  exit 1
+fi
+
+if [ -n "${instance_id}" ]; then
+  echo "Instance ID: ${instance_id}"
   instance_ids=$(get_instances_by_tag "${tag_value}" "${aws_region}" "${aws_profile}")
+fi
+
+if [ -n "${ssm_name}" ]; then
+  echo "SSM instance name: ${ssm_name}"
+  instance_id=$(get_instance_by_ssm_name "${ssm_name}" "${aws_region}" "${aws_profile}")
+fi
+
+# If instance ID is set via -x, or ssm instance name via -m, use it
+# If both tag and instance ID are set, use instance id
+if [ -z "${instance_id}" ] && [ -z "${ssm_name}" ]; then
 
   if [ -z "${instance_ids}" ]; then
     echo "No instances available with tag ${tag_value} in region ${aws_region}"

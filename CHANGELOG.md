@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [1.0.24]
+
+- @andreclaro add AWS System Manager support to connect to non-EC2 instances using their Name tag (use of `-m` flag)
+
 ## [1.0.23]
 
 - @phamtriduy Support remote tunnel host with AWS-StartPortForwardingSessionToRemoteHost document  (via use of `-i` flag)

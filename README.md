@@ -16,22 +16,25 @@ Choose one of the following options:
 ```bash
 Usage:
 
-/usr/local/bin/aws-connect [-a ssh|tunnel|document] [-d <document name>] [-c <document parameters>] [-g <github access token location>] [-n <instance name>|-t <instance tag>] [-r <region>] [-p <profile name>] [-o <port>] [-x <instance id>] [-l] [-s] [-h] [-v]
+aws-connect [-a ssh|tunnel|document] [-i <remote host name>] [-d <document name>] [-c <document parameters>] [-g <github access token location>] [-n <instance name>|-t <instance tag>|-m <ssm instance name>] [-r <region>] [-p <profile name>] [-o <port>] [-x <instance id>] [-l] [-s] [-h] [-v]
 
   -a   Connect interactive session (ssh), establish tunnel (tunnel), or run an ssm document (document) on an instance (default: ssh)
-  -n   Value for the Name tag of an EC2 instance
-  -t   Specify a tag instead of a name. The tag can be 'key' or 'key=value'
-  -r   AWS region (default: us-east-1)
-  -p   AWS profile (default: none)
-  -o   Local ssh tunnel port (only applicable in tunnel mode; default: 9999)
-  -x   override Name tag and connect direct to given instance ID
-  -s   Pick a specific instance ID
-  -h   Display this help
-  -d   Specify the name of the ssm document to run.
+  -i   Specify the name of the remote host name to tunnel to. Only needed if running ssm tunnel action (default: localhost)
+  -d   Specify the name of the ssm document to run. Only needed if running ssm document action.
   -w   Values for the ssm document arguments (Optional)
   -g   The location in aws ssm parameter store of the github token to use (Optional)
   -c   The name of the cloudwatch group to store logs in. Required for running documents, defaults to aws-connect
   -l   Flag if the command is going to be long running(8hrs +)
+  -n   Value for the Name tag of an EC2 instance
+  -t   Specify a tag instead of a name. The tag can be 'key' or 'key=value'
+  -m   Specify the SSM instance name
+  -r   AWS region (default: us-east-1)
+  -p   AWS profile (default: none)
+  -f   Remote tunnel port (only applicable in tunnel mode); Defaults to 22
+  -o   Local tunnel port (only applicable in tunnel mode; default: 9999)
+  -x   override Name tag and connect direct to given instance ID
+  -s   Pick a specific instance ID
+  -h   Display this help
   -v   Display version
   ```
 
