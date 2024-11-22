@@ -79,7 +79,7 @@ get_instance_by_ssm_name() {
 
   instance_id=$(aws ssm describe-instance-information \
     --filters "Key=tag:Name,Values=${name}" \
-    --query 'InstanceInformationList[*].{Instance:InstanceId,Name:Name}' \
+    --query 'InstanceInformationList[?PingStatus==`Online`].{Instance:InstanceId,Name:Name,Status:PingStatus}' \
     --output json \
     --region "${region}" \
     --profile "${profile}" | jq -r '.[0].Instance')
