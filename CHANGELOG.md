@@ -2,6 +2,7 @@
 
 ## [1.1.1]
 
+- @qedgardo ssh: filter instances by PingStatus to ensure only get online instances #26
 - @mkhinda29 Fix regression when using -t (tags) or -n (Name tag)
 
 ## [1.1.0]
