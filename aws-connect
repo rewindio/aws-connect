@@ -3,7 +3,7 @@
 # Wrapper around AWS session manager for instance access and SSH tunnels
 
 programname=$0
-version=1.1.0
+version=1.1.1
 
 # Defaults
 action=ssh
@@ -215,8 +215,8 @@ if [ -n "${instance_id}" ] && [ -n "${ssm_name}" ]; then
   exit 1
 fi
 
-if [ -n "${instance_id}" ]; then
-  echo "Instance ID: ${instance_id}"
+if [ -n "${tag_value}" ]; then
+  echo "Instance Name Tag: ${tag_value}"
   instance_ids=$(get_instances_by_tag "${tag_value}" "${aws_region}" "${aws_profile}")
 fi
 

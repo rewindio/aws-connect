@@ -1,6 +1,10 @@
 # CHANGELOG
 
-## [1.0.24]
+## [1.1.1]
+
+- @mkhinda29 Fix regression when using -t (tags) or -n (Name tag)
+
+## [1.1.0]
 
 - @andreclaro add AWS System Manager support to connect to non-EC2 instances using their Name tag (use of `-m` flag)
 
